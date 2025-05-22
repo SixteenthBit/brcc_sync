@@ -9,7 +9,7 @@ const fs = require('fs').promises;
 
 const TICKET_NUMBER_TO_FIND = '14490912115';
 const ORDER_ID = '14489';
-const OUTPUT_FILE = 'ticket_data_reference.md';
+const OUTPUT_FILE = 'output/fooevents_woocommerce_management/fooevents_ticket_order_reference.md';
 
 const wooCommerce = new WooCommerceRestApi({
   url: 'https://' + process.env.BASE_URL,

@@ -19,7 +19,7 @@ const BASE_URL = process.env.BASE_URL;
 const PRODUCT_ID = '4156'; // WooCommerce Product ID
 const TARGET_SLOT_NAME = "May Show";
 const TARGET_BOOKING_DATE = "May 12, 2025";
-const OUTPUT_FILE_NAME = 'woocommerce_product_data_reference.md';
+const OUTPUT_FILE_NAME = 'output/fooevents_woocommerce_management/fooevents_product_booking_reference.md';
 
 // Initialize WooCommerce API
 const api = new WooCommerceRestApi({

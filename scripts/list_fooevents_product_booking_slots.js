@@ -23,7 +23,7 @@ console.log('WooCommerce API Initialized with URL:', process.env.WOOCOMMERCE_API
 console.log('WooCommerce API Consumer Key Loaded:', !!process.env.WOOCOMMERCE_CONSUMER_KEY);
 console.log('WooCommerce API Consumer Secret Loaded:', !!process.env.WOOCOMMERCE_CONSUMER_SECRET);
 
-const OUTPUT_FILE_PATH = path.join(__dirname, 'woocommerce_fooevents_full_list.md');
+const OUTPUT_FILE_PATH = path.join(__dirname, '../output/fooevents_woocommerce_management/fooevents_product_booking_slots_list.md');
 
 async function fetchProductData(productId) {
     try {

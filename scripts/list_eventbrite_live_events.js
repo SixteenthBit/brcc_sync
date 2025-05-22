@@ -19,7 +19,7 @@ const path = require('path'); // To handle directory creation
 // Eventbrite API endpoint and access token
 const eventbriteToken = process.env.private_token;
 const organizationId = '698566935713'; // Replace with your Organization ID
-const outputFilePath = 'docs_and_reference/live_event_list.md';
+const outputFilePath = 'output/eventbrite_management/live_eventbrite_events_list.md';
 
 // Helper function to format date to "Month Day" (e.g., "May 10")
 function formatFriendlyDate(dateString) {
