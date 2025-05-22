@@ -1,14 +1,8 @@
 /*
-  High-level: Compares event names between WooCommerce and Live Event List,
-  outputs events present in one list but missing in the other.
-*/
-
-/**
- * Script to compare event names between WooCommerce and Live Event List.
- * Outputs events present in one list but missing in the other.
+  High-level: shows all event titles from fooevents and also eventbrite 
  */
 
-const wooEventsRaw = [
+fooevents / woocommerce events = [
 
   "Ali Sultan @ Backroom Comedy Club (Product ID: 37273)",
   "Anthony Pappaly & Nik Oka Live @ Backroom Comedy Club | Limited Run (Product ID: 37271)",
@@ -29,7 +23,7 @@ const wooEventsRaw = [
   "Wednesday Night at Backroom Comedy Club (Product ID: 3986)"
 ];
 
-const liveEventsRaw = [
+eventbrite events = [
   "8PM Wednesdays - Pro Hilarious Stand-up | Humpday Comedy Delight (Series ID: 448735799857)",
   "10 PM Wednesdays - Pro Hilarious Stand-up Comedy | Late-Night laughs (Series ID: 769799319487)",
   "8PM Thursday - Pro Hilarious Stand-up Comedy Vibes  | The Laughter Fix (Series ID: 430277871697)",
@@ -55,35 +49,4 @@ const liveEventsRaw = [
   "Ali Sultan live @ Backroom Comedy Club (Series ID: 1362389596959)"
 ];
 
-function extractName(raw) {
-  // Remove product or series ID part
-  return raw.replace(/\(Product ID:.*\)/, '').replace(/\(Series ID:.*\)/, '').trim();
-}
-
-// Normalize function to lowercase and remove extra words and punctuation for comparison
-function normalizeEventName(name) {
-  return name
-    .toLowerCase()
-    .replace(/\blive\b/g, '')
-    .replace(/\blimited run\b/g, '')
-    .replace(/\bone night only\b/g, '')
-    .replace(/\|/g, '')
-    .replace(/[^a-z0-9 ]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-const wooEvents = wooEventsRaw.map(e => normalizeEventName(extractName(e)));
-const liveEvents = liveEventsRaw.map(e => normalizeEventName(extractName(e)));
-
-const wooSet = new Set(wooEvents);
-const liveSet = new Set(liveEvents);
-
-const inWooNotLive = [...wooSet].filter(e => !liveSet.has(e));
-const inLiveNotWoo = [...liveSet].filter(e => !wooSet.has(e));
-
-console.log("Events in WooCommerce but not in Live Event List:");
-console.log(inWooNotLive);
-
-console.log("Events in Live Event List but not in WooCommerce:");
-console.log(inLiveNotWoo);
+OBSOLETE -- ARCHIVED FOR LIST REFERENCE ONLY
