@@ -16,76 +16,23 @@ app.use((req, res, next) => {
   next();
 });
 
-const { fetchAllLiveEvents, fetchTicketClassesForEvent, fetchEventOccurrences, updateTicketClassCapacity } = require('./eventbrite-api');
+const { fetchAllLiveEvents, fetchTicketClassesForEvent, fetchEventOccurrences, updateTicketClassCapacity, fetchPaginatedGroupedLiveEvents } = require('./eventbrite-api');
 
 // Routes
 // GET /api/events
 app.get('/api/events', async (req, res) => {
   const privateToken = process.env.PRIVATE_TOKEN;
   const organizationId = process.env.ORGANIZATION_ID;
+  const page = parseInt(req.query.page, 10) || 1;
+  const pageSize = parseInt(req.query.pageSize, 10) || 10;
 
   if (!privateToken || !organizationId) {
     return res.status(500).json({ error: 'Server configuration error: Missing Eventbrite credentials.' });
   }
 
   try {
-    const rawEvents = await fetchAllLiveEvents(organizationId, privateToken);
-    const processedEvents = [];
-
-    for (const event of rawEvents) {
-      let occurrencesData = [];
-
-      if (event.is_series_parent || (event.series_id && event.id === event.series_id) || (!event.series_id && event.has_multiple_dates)) { // Heuristic for a series
-        // This event is likely a series parent. Fetch its occurrences.
-        // Note: Eventbrite's /events endpoint can return series parents directly.
-        // Their occurrences need to be fetched separately.
-        // The event.id for a series parent is the series_id.
-        const occurrences = await fetchEventOccurrences(event.id, privateToken);
-        for (const occ of occurrences) {
-          // For each occurrence, fetch its specific ticket classes
-          // The 'occ.id' is the actual event_id for this specific occurrence
-          const ticketClasses = await fetchTicketClassesForEvent(occ.id, privateToken);
-          occurrencesData.push({
-            id: occ.id,
-            name: occ.name ? occ.name.text : event.name.text, // Occurrence might not have its own name
-            start_time: occ.start.utc,
-            end_time: occ.end.utc,
-            ticket_classes: ticketClasses,
-            // Add venue if available and needed: occ.venue or event.venue
-          });
-        }
-      } else if (!event.series_id) {
-        // This is a single, non-recurring event or an individual occurrence fetched from /events
-        // It's treated as a "series" with one "occurrence" (itself).
-        // The event.id is the occurrenceId here.
-        const ticketClasses = await fetchTicketClassesForEvent(event.id, privateToken);
-        occurrencesData.push({
-          id: event.id,
-          name: event.name.text,
-          start_time: event.start.utc,
-          end_time: event.end.utc,
-          ticket_classes: ticketClasses,
-          venue: event.venue ? { name: event.venue.name, address: event.venue.address.localized_address_display } : null,
-          // Add overall capacity/sold from event.ticket_availability if needed for the occurrence
-        });
-      }
-      // Else (if event.series_id && event.id !== event.series_id), it's an occurrence already,
-      // but fetchAllLiveEvents with expand=ticket_availability might not give specific ticket classes for it.
-      // The goal is to structure by series. If fetchAllLiveEvents only returns series, the first 'if' handles it.
-      // If it returns individual occurrences of a series, they might be grouped later or we adjust fetchAllLiveEvents.
-      // For now, this structure assumes fetchAllLiveEvents gets series parents or standalone events.
-
-      if (occurrencesData.length > 0) {
-        processedEvents.push({
-          series_id: event.id, // The ID of the event series (or the event itself if not a series)
-          name: event.name.text,
-          //url: event.url, // URL to the series page
-          occurrences: occurrencesData,
-        });
-      }
-    }
-
-    res.json(processedEvents);
+    const result = await fetchPaginatedGroupedLiveEvents(organizationId, privateToken, page, pageSize);
+    res.json(result);
   } catch (error) {
     console.error('Error in /api/events:', error);
     res.status(500).json({ error: 'Failed to fetch events from Eventbrite.', details: error.message });

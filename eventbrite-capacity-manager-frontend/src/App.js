@@ -13,6 +13,7 @@ function App() {
   const [selectedOccurrenceId, setSelectedOccurrenceId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveResults, setSaveResults] = useState([]); // To store results of save operations
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, totalPages: 1, totalSeries: 0 });
 
   // LocalStorage helpers
   const getStoredOffset = (ticketClassId) => {
@@ -25,22 +26,24 @@ function App() {
   };
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    fetchEvents(pagination.page);
+    // eslint-disable-next-line
+  }, [pagination.page]);
 
-  const fetchEvents = async () => {
+  const fetchEvents = async (page = 1) => {
     setLoading(true);
-    setError(null); // Clear previous fetch error
-    setAppMessage({ text: null, type: null }); // Clear general messages
+    setError(null);
+    setAppMessage({ text: null, type: null });
     try {
-      const response = await axios.get(`${API_URL}/events`);
-      setEvents(response.data);
-      if (response.data.length === 0) {
+      const response = await axios.get(`${API_URL}/events?page=${page}&pageSize=${pagination.pageSize}`);
+      setEvents(response.data.series || []);
+      setPagination(response.data.pagination || { page: 1, pageSize: 10, totalPages: 1, totalSeries: 0 });
+      if (!response.data.series || response.data.series.length === 0) {
         setAppMessage({ text: "No live events found for your organization.", type: "info" });
       }
     } catch (err) {
       const errorMessage = err.response ? err.response.data.error : err.message;
-      setError(errorMessage); // Set fetch error for specific display
+      setError(errorMessage);
       console.error("Error fetching events:", err);
     }
     setLoading(false);
@@ -145,7 +148,7 @@ function App() {
     setSaveResults(processedResults);
     setIsSaving(false);
     setPendingChanges({}); // Clear pending changes after attempting to save all
-    fetchEvents(); // Refresh data from the server
+    fetchEvents(pagination.page); // Refresh data from the server
   };
 
   // Remove or comment out handleSubmitCapacityUpdate as it's replaced by handleSaveAllChanges
@@ -156,24 +159,42 @@ function App() {
     if (!selectedOccurrenceId) return null;
     for (const series of events) {
       const found = series.occurrences.find(occ => occ.id === selectedOccurrenceId);
-      if (found) return { ...found, seriesName: series.name }; // Add series name for context
+      if (found) return { ...found, seriesName: series.name };
     }
     return null;
   };
 
   const selectedOccurrenceDetails = getSelectedOccurrenceDetails();
 
-  // Flatten occurrences for selection list
+  // Flatten occurrences for selection list (only for current page)
   const allOccurrences = events.reduce((acc, series) => {
     series.occurrences.forEach(occurrence => {
       acc.push({
         ...occurrence,
-        seriesName: series.name, // Add series name for display
+        seriesName: series.name,
         seriesId: series.series_id,
       });
     });
     return acc;
   }, []);
+
+  // Pagination controls
+  const handlePrevPage = () => {
+    if (pagination.page > 1) {
+      setPagination(prev => ({ ...prev, page: prev.page - 1 }));
+      setSelectedOccurrenceId(null);
+    }
+  };
+  const handleNextPage = () => {
+    if (pagination.page < pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: prev.page + 1 }));
+      setSelectedOccurrenceId(null);
+    }
+  };
+  const handlePageSelect = (pageNum) => {
+    setPagination(prev => ({ ...prev, page: pageNum }));
+    setSelectedOccurrenceId(null);
+  };
 
   if (loading) return <div className="App"><header className="App-header"><h1>Eventbrite Capacity Manager</h1></header><main><p className="loading-message">Loading events...</p></main></div>;
   
@@ -181,7 +202,7 @@ function App() {
     <div className="App">
       <header className="App-header">
         <h1>Eventbrite Capacity Manager</h1>
-        <button onClick={fetchEvents} disabled={loading || isSaving}>Refresh Events</button>
+        <button onClick={() => fetchEvents(pagination.page)} disabled={loading || isSaving}>Refresh Events</button>
       </header>
       <main>
         {error && <div className="app-message error-message">Error fetching events: {error}</div>}
@@ -189,6 +210,20 @@ function App() {
 
         <div className="occurrence-selector">
           <h2>Select an Event Occurrence:</h2>
+          <div className="pagination-controls">
+            <button onClick={handlePrevPage} disabled={pagination.page === 1}>Prev</button>
+            {Array.from({ length: pagination.totalPages }, (_, i) => (
+              <button
+                key={i + 1}
+                className={pagination.page === i + 1 ? 'active' : ''}
+                onClick={() => handlePageSelect(i + 1)}
+                disabled={pagination.page === i + 1}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button onClick={handleNextPage} disabled={pagination.page === pagination.totalPages}>Next</button>
+          </div>
           {allOccurrences.length === 0 && !loading && !error && !appMessage.text && <p>No live event occurrences found.</p>}
           <ul>
             {allOccurrences.map(occurrence => (

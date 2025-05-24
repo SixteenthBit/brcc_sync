@@ -20,6 +20,8 @@ async function fetchEventPage(organizationId, privateToken, continuationToken = 
     params.continuation = continuationToken;
   }
 
+  console.log(`[fetchEventPage] Fetching events page for org ${organizationId} (continuation: ${continuationToken || 'none'})`);
+
   try {
     const response = await axios.get(url, {
       headers: {
@@ -28,46 +30,107 @@ async function fetchEventPage(organizationId, privateToken, continuationToken = 
       },
       params,
     });
+    console.log(`[fetchEventPage] Fetched ${response.data.events ? response.data.events.length : 0} events.`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching events page: ${error.response ? error.response.status : error.message}`, error.response ? error.response.data : '');
+    console.error(`[fetchEventPage] Error: ${error.response ? error.response.status : error.message}`, error.response ? error.response.data : '');
     throw error; // Re-throw to be handled by the caller
   }
 }
 
 /**
- * Fetches all live events for the given organization, handling pagination.
+ * Fetches all live events for the given organization, handling pagination and grouping by event name (series).
+ * Returns a paginated, grouped, and filtered list of live events, with only the necessary fields.
  * @param {string} organizationId The Eventbrite organization ID.
  * @param {string} privateToken The Eventbrite private token.
- * @returns {Promise<Array<object>>} A promise that resolves to an array of all live event objects.
+ * @param {number} page The page number to fetch (1-based).
+ * @param {number} pageSize The number of series per page.
+ * @returns {Promise<object>} A promise that resolves to an object with grouped events and pagination info.
  */
-async function fetchAllLiveEvents(organizationId, privateToken) {
+async function fetchPaginatedGroupedLiveEvents(organizationId, privateToken, page = 1, pageSize = 10) {
+  console.log(`[fetchPaginatedGroupedLiveEvents] Called for org ${organizationId}, page ${page}, pageSize ${pageSize}`);
+  // Step 1: Fetch all live events (with pagination from Eventbrite API)
   let allEvents = [];
-  let continuationToken = null;
+  let continuation = null;
   let hasMoreItems = true;
-
-  console.log(`Fetching all live events for organization ID: ${organizationId}`);
+  let pageNumber = 0;
+  let totalObjectCount = 0;
 
   while (hasMoreItems) {
-    try {
-      const data = await fetchEventPage(organizationId, privateToken, continuationToken);
-      if (data.events && data.events.length > 0) {
-        allEvents = allEvents.concat(data.events);
-      }
-      if (data.pagination && data.pagination.has_more_items) {
-        continuationToken = data.pagination.continuation;
-        console.log(`Fetching next page with continuation: ${continuationToken}`);
-      } else {
-        hasMoreItems = false;
-      }
-    } catch (error) {
-      console.error('Failed to fetch all live events:', error);
-      hasMoreItems = false; // Stop pagination on error
-      throw error; // Re-throw to be handled by the route handler
+    pageNumber++;
+    console.log(`[fetchPaginatedGroupedLiveEvents] Fetching page ${pageNumber} from Eventbrite API...`);
+    const data = await fetchEventPage(organizationId, privateToken, continuation);
+    if (data.events && data.events.length > 0) {
+      allEvents = allEvents.concat(data.events);
+      console.log(`[fetchPaginatedGroupedLiveEvents] Accumulated events: ${allEvents.length}`);
+    }
+    if (pageNumber === 1) {
+      totalObjectCount = data.pagination.object_count;
+      console.log(`[fetchPaginatedGroupedLiveEvents] Total object count from API: ${totalObjectCount}`);
+    }
+    if (data.pagination && data.pagination.has_more_items) {
+      continuation = data.pagination.continuation;
+      console.log(`[fetchPaginatedGroupedLiveEvents] More items to fetch, continuation: ${continuation}`);
+    } else {
+      hasMoreItems = false;
+      console.log(`[fetchPaginatedGroupedLiveEvents] No more items to fetch.`);
     }
   }
-  console.log(`Total live events fetched: ${allEvents.length}`);
-  return allEvents;
+
+  // Step 2: Group events by name (series)
+  const groupedEvents = {};
+  allEvents.forEach(event => {
+    const eventName = event.name && event.name.text ? event.name.text : 'Unnamed Event';
+    if (!groupedEvents[eventName]) {
+      groupedEvents[eventName] = [];
+    }
+    groupedEvents[eventName].push(event);
+  });
+  console.log(`[fetchPaginatedGroupedLiveEvents] Grouped into ${Object.keys(groupedEvents).length} series.`);
+
+  // Step 3: Convert groupedEvents to an array of series objects, each with sorted occurrences
+  const seriesList = Object.entries(groupedEvents).map(([seriesName, occurrences]) => {
+    // Sort occurrences chronologically by start.utc
+    occurrences.sort((a, b) => new Date(a.start.utc) - new Date(b.start.utc));
+    // Attempt to find a common series_id or use the first event's ID as a fallback
+    let seriesIdToDisplay = occurrences[0].series_id || (occurrences[0].series_parent ? occurrences[0].series_parent.id : null);
+    if (!seriesIdToDisplay) {
+      seriesIdToDisplay = occurrences[0].id;
+    }
+    return {
+      series_id: seriesIdToDisplay,
+      name: seriesName,
+      occurrences: occurrences.map(occ => ({
+        id: occ.id,
+        name: occ.name && occ.name.text ? occ.name.text : 'Unnamed Occurrence',
+        start_time: occ.start.utc,
+        end_time: occ.end.utc,
+        status: occ.status,
+        url: occ.url,
+        ticket_availability: occ.ticket_availability,
+        category: occ.category,
+        subcategory: occ.subcategory,
+        venue: occ.venue,
+      })),
+    };
+  });
+  console.log(`[fetchPaginatedGroupedLiveEvents] Created seriesList with ${seriesList.length} series.`);
+
+  // Step 4: Paginate the seriesList
+  const totalSeries = seriesList.length;
+  const totalPages = Math.ceil(totalSeries / pageSize);
+  const paginatedSeries = seriesList.slice((page - 1) * pageSize, page * pageSize);
+  console.log(`[fetchPaginatedGroupedLiveEvents] Returning page ${page} with ${paginatedSeries.length} series (totalPages: ${totalPages}).`);
+
+  return {
+    series: paginatedSeries,
+    pagination: {
+      page,
+      pageSize,
+      totalSeries,
+      totalPages,
+    },
+  };
 }
 
 /**
@@ -81,7 +144,7 @@ async function fetchAllLiveEvents(organizationId, privateToken) {
  */
 async function fetchTicketClassesForEvent(eventId, privateToken) {
   const url = `${EVENTBRITE_API_BASE_URL}/events/${eventId}/ticket_classes/`;
-  console.log(`Fetching ticket classes for event ID: ${eventId}`);
+  console.log(`[fetchTicketClassesForEvent] Fetching ticket classes for event ID: ${eventId}`);
   try {
     const response = await axios.get(url, {
       headers: {
@@ -89,6 +152,7 @@ async function fetchTicketClassesForEvent(eventId, privateToken) {
         'Content-Type': 'application/json',
       },
     });
+    console.log(`[fetchTicketClassesForEvent] Fetched ${response.data.ticket_classes ? response.data.ticket_classes.length : 0} ticket classes.`);
     // We need to extract relevant details: id, name, capacity, quantity_sold
     // The `ticket_classes` endpoint provides `total_capacity_per_event` and `quantity_sold`
     // The ticket_classes endpoint returns a paginated list of ticket_class objects.
@@ -111,7 +175,7 @@ async function fetchTicketClassesForEvent(eventId, privateToken) {
       };
     });
   } catch (error) {
-    console.error(`Error fetching ticket classes for event ${eventId}: ${error.response ? error.response.status : error.message}`, error.response ? error.response.data : '');
+    console.error(`[fetchTicketClassesForEvent] Error for event ${eventId}: ${error.response ? error.response.status : error.message}`, error.response ? error.response.data : '');
     // If an event has no ticket classes or access is restricted, this might fail.
     // Return empty array to allow processing of other events.
     // Consider if specific error codes (e.g., 404) should be handled differently.
@@ -127,7 +191,7 @@ async function fetchTicketClassesForEvent(eventId, privateToken) {
  */
 async function fetchEventOccurrences(seriesId, privateToken) {
   const url = `${EVENTBRITE_API_BASE_URL}/series/${seriesId}/occurrences/`;
-  console.log(`Fetching occurrences for event series ID: ${seriesId}`);
+  console.log(`[fetchEventOccurrences] Fetching occurrences for event series ID: ${seriesId}`);
   try {
     // This endpoint also supports pagination, but typically series have a manageable number of occurrences.
     // Assuming one page is enough for now for simplicity.
@@ -140,9 +204,10 @@ async function fetchEventOccurrences(seriesId, privateToken) {
         status: 'live', // Only interested in live occurrences
       }
     });
+    console.log(`[fetchEventOccurrences] Fetched ${response.data.occurrences ? response.data.occurrences.length : 0} occurrences.`);
     return response.data.occurrences || [];
   } catch (error) {
-    console.error(`Error fetching occurrences for series ${seriesId}: ${error.response ? error.response.status : error.message}`, error.response ? error.response.data : '');
+    console.error(`[fetchEventOccurrences] Error for series ${seriesId}: ${error.response ? error.response.status : error.message}`, error.response ? error.response.data : '');
     return []; // Return empty on error to not break the entire event list
   }
 }
@@ -158,7 +223,7 @@ async function fetchEventOccurrences(seriesId, privateToken) {
  */
 async function updateTicketClassCapacity(eventOccurrenceId, ticketClassId, newCapacity, privateToken) {
   const url = `${EVENTBRITE_API_BASE_URL}/events/${eventOccurrenceId}/ticket_classes/${ticketClassId}/`;
-  console.log(`Updating capacity for ticket class ${ticketClassId} on event ${eventOccurrenceId} to ${newCapacity}`);
+  console.log(`[updateTicketClassCapacity] Updating capacity for ticket class ${ticketClassId} on event ${eventOccurrenceId} to ${newCapacity}`);
 
   const payload = {
     ticket_class: {
@@ -173,16 +238,16 @@ async function updateTicketClassCapacity(eventOccurrenceId, ticketClassId, newCa
         'Content-Type': 'application/json',
       },
     });
-    console.log(`Successfully updated capacity for ticket class ${ticketClassId} on event ${eventOccurrenceId}.`);
+    console.log(`[updateTicketClassCapacity] Successfully updated capacity for ticket class ${ticketClassId} on event ${eventOccurrenceId}.`);
     return response.data;
   } catch (error) {
-    console.error(`Error updating capacity for ticket class ${ticketClassId} on event ${eventOccurrenceId}:`, error.response ? error.response.data : error.message);
+    console.error(`[updateTicketClassCapacity] Error updating capacity for ticket class ${ticketClassId} on event ${eventOccurrenceId}:`, error.response ? error.response.data : error.message);
     throw error; // Re-throw to be handled by the route handler
   }
 }
 
 module.exports = {
-  fetchAllLiveEvents,
+  fetchPaginatedGroupedLiveEvents,
   fetchTicketClassesForEvent,
   fetchEventOccurrences,
   updateTicketClassCapacity,
