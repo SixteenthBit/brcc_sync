@@ -1,133 +1,247 @@
-# Eventbrite Capacity Manager
+# Backroom Comedy Club - Event Management System
 
-## Overview
+A comprehensive React + Python web application for managing both **Eventbrite** and **WooCommerce FooEvents** ticket capacity from a unified dashboard. This system provides real-time ticket sales data, capacity management, and accurate inventory tracking for comedy club events.
 
-The Eventbrite Capacity Manager is a full-stack application designed to help event organizers manage the ticket capacities for their Eventbrite events. It provides a user-friendly interface to view live events and their occurrences, and to adjust the capacity of individual ticket classes. The application intelligently tracks the total adjustments made to each ticket class's capacity over time, storing this "app-modified count" in the browser's local storage to provide context alongside the current API-set capacity.
+## 🎭 Overview
 
-## Project Structure
+This application was built specifically for **Backroom Comedy Club** to solve critical issues with ticket capacity management across two platforms:
 
-The application is organized into two main parts:
+- **Eventbrite**: For special events and one-off shows
+- **WooCommerce + FooEvents**: For regular weekly shows and recurring events
 
-*   `eventbrite-capacity-manager-backend/`: A Node.js/Express.js application that serves as the backend API. It handles communication with the Eventbrite API for fetching event data and updating ticket capacities.
-*   `eventbrite-capacity-manager-frontend/`: A React application that provides the user interface for viewing events and managing capacities.
+### Key Problems Solved
 
-## Prerequisites
+1. **Accurate Ticket Sales Data**: Integrates directly with WordPress database to get real ticket sales instead of calculated estimates
+2. **Dual Platform Management**: Single dashboard for both Eventbrite and WooCommerce events
+3. **Real-time Capacity Updates**: Live inventory management with proper error handling
+4. **Mixed Event Types**: Handles both FooEvents Bookings (multi-slot) and normal FooEvents (single show) configurations
 
-Before you begin, ensure you have the following installed:
+## ✨ Features
 
-*   **Node.js:** (LTS version recommended, e.g., v18.x or later) - Download from [nodejs.org](https://nodejs.org/)
-*   **npm:** (Node Package Manager) - Typically comes with Node.js.
+### Eventbrite Integration
+- 🎫 **Real-time Capacity Management**: View and modify Eventbrite ticket class capacity
+- 📊 **Series Management**: Browse all event series with on-sale events
+- ➕ **Increment/Decrement**: Easily adjust capacity by 1
+- 🔄 **Live Updates**: Real-time status updates and error handling
 
-## Backend Setup (`eventbrite-capacity-manager-backend/`)
+### WooCommerce FooEvents Integration
+- 🎪 **Multi-Platform Support**: Handles both FooEvents Bookings and normal FooEvents
+- 📅 **Slot Management**: Multiple time slots per event (8pm, 10pm shows)
+- 📈 **Accurate Sales Data**: Direct WordPress database integration for real ticket counts
+- 🔍 **Smart Detection**: Automatically detects event type based on existing ticket metadata
+- ❌ **Error Handling**: Clear error indicators when database unavailable
 
-1.  **Navigate to the Backend Directory:**
-    ```bash
-    cd eventbrite-capacity-manager-backend
-    ```
+### Technical Features
+- 📱 **Responsive Design**: Works on desktop and mobile devices
+- 🔒 **Secure**: Uses official APIs with proper authentication
+- ⚡ **Fast**: Built with Vite and FastAPI for optimal performance
+- 💾 **Caching**: Intelligent caching system for improved performance
+- 🔧 **Debug Tools**: Comprehensive debugging endpoints for troubleshooting
 
-2.  **Create and Configure `.env` File:**
-    Create a `.env` file in the `eventbrite-capacity-manager-backend/` directory by copying the `.env.example` file (if it exists) or by creating a new one. Add your Eventbrite API credentials and server configuration as follows:
+## 🏗️ Architecture
 
-    ```env
-    # EVENTBRITE API DETAILS
-    PRIVATE_TOKEN="YOUR_EVENTBRITE_PRIVATE_TOKEN" # Critical for API authentication
-    ORGANIZATION_ID="YOUR_EVENTBRITE_ORGANIZATION_ID" # Critical to fetch correct events for your organization
+- **Backend**: Python FastAPI server with multi-platform API integration
+- **Frontend**: React TypeScript app built with Vite
+- **Database**: Direct WordPress MySQL integration for accurate ticket data
+- **APIs**: RESTful endpoints for capacity management and data retrieval
 
-    # Optional - These are standard Eventbrite App Partner variables.
-    # While not strictly used by this project's core Eventbrite API calls for fetching events
-    # or updating ticket capacities (which primarily use the PRIVATE_TOKEN),
-    # including them can be useful if you intend to expand the application's
-    # capabilities or use a more complex OAuth flow in the future.
-    # For the current application, PRIVATE_TOKEN and ORGANIZATION_ID are the most important.
-    API_KEY="YOUR_EVENTBRITE_API_KEY"
-    CLIENT_SECRET="YOUR_EVENTBRITE_CLIENT_SECRET"
-    PUBLIC_TOKEN="YOUR_EVENTBRITE_PUBLIC_TOKEN" # Sometimes referred to as an Anonymous Access OAuth token
+## 📁 Project Structure
 
-    # SERVER CONFIGURATION
-    PORT=3001 # Optional: Defines the port on which the backend server will run. Defaults to 3001 if not set.
-    ```
-    *   **`PRIVATE_TOKEN`**: Your private OAuth token from Eventbrite. This is **critical** for authenticating API requests to manage your events. You can find or generate this in your Eventbrite account under "API Keys".
-    *   **`ORGANIZATION_ID`**: Your Eventbrite Organization ID. This is **critical** to ensure the application fetches events for the correct organization. This ID can be found in your Eventbrite account settings or via the API.
-    *   `API_KEY`, `CLIENT_SECRET`, `PUBLIC_TOKEN`: These are generally used for more complex Eventbrite integrations or app partnerships. For the direct server-to-server interactions in this application (fetching events and updating capacities for your own organization), the `PRIVATE_TOKEN` is typically sufficient.
-    *   `PORT`: The port for the backend server. If not specified, the application defaults to `3001`.
+```
+brcc_sync/
+├── backend/
+│   ├── app.py              # FastAPI application with all endpoints
+│   ├── eventbrite.py       # Eventbrite API client
+│   ├── woocommerce.py      # WooCommerce API client
+│   ├── wordpress_db.py     # WordPress database client
+│   ├── run_dev.py          # Development server launcher
+│   └── requirements.txt    # Python dependencies
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── CapacityManager.tsx    # Unified capacity management
+│   │   │   ├── SeriesViewer.tsx       # Eventbrite series browser
+│   │   │   └── WooCommerceViewer.tsx  # WooCommerce events browser
+│   │   ├── api.ts          # API client
+│   │   └── App.tsx         # Root component
+│   └── package.json        # Node.js dependencies
+├── references_docs/        # FooEvents plugin documentation
+├── ENVIRONMENT_SETUP.md    # Detailed setup instructions
+└── README.md              # This file
+```
 
-3.  **Install Dependencies:**
-    In the `eventbrite-capacity-manager-backend/` directory, run:
-    ```bash
-    npm install
-    ```
+## 🚀 Quick Start
 
-4.  **Start the Backend Server:**
-    ```bash
-    npm start
-    ```
-    The backend server should now be running (by default on `http://localhost:3001`).
+### Prerequisites
 
-## Frontend Setup (`eventbrite-capacity-manager-frontend/`)
+- Python 3.8+
+- Node.js 16+
+- Eventbrite Private Token
+- WooCommerce API credentials
+- WordPress database access (for accurate ticket data)
 
-1.  **Navigate to the Frontend Directory:**
-    From the project root, navigate to the frontend directory:
-    ```bash
-    cd eventbrite-capacity-manager-frontend
-    ```
+### 1. Backend Setup
 
-2.  **Install Dependencies:**
-    In the `eventbrite-capacity-manager-frontend/` directory, run:
-    ```bash
-    npm install
-    ```
+```bash
+cd backend
+pip install -r requirements.txt
+```
 
-3.  **Start the Frontend Development Server:**
-    ```bash
-    npm start
-    ```
-    The React development server will start, and the application should automatically open in your default web browser (usually at `http://localhost:3000`).
+Create `.env` file with your credentials:
+```env
+# Eventbrite
+PRIVATE_TOKEN=your_eventbrite_private_token
 
-4.  **(Optional) Configure Backend API URL:**
-    By default, the frontend application expects the backend API to be running at `http://localhost:3001/api`. If your backend is running on a different URL (e.g., if you deployed it or are using a different port), you can configure this by creating a `.env` file in the `eventbrite-capacity-manager-frontend/` directory with the following content:
-    ```env
-    REACT_APP_API_URL=http://your-backend-host:your-backend-port/api
-    ```
-    Replace `http://your-backend-host:your-backend-port/api` with the actual URL of your backend.
+# WooCommerce
+WOOCOMMERCE_CONSUMER_KEY=your_woocommerce_key
+WOOCOMMERCE_CONSUMER_SECRET=your_woocommerce_secret
+WOOCOMMERCE_API_URL=https://backroomcomedyclub.com
 
-## Running the Application
+# WordPress Database (for accurate ticket sales)
+WORDPRESS_DB_HOST=your_server_ip
+WORDPRESS_DB_PORT=3306
+WORDPRESS_DB_USER=your_db_username
+WORDPRESS_DB_PASSWORD=your_db_password
+WORDPRESS_DB_NAME=your_db_name
+WORDPRESS_TABLE_PREFIX=wp_
+```
 
-To use the Eventbrite Capacity Manager:
+Start the backend:
+```bash
+python run_dev.py
+```
 
-1.  Ensure the **backend server is running** (see Backend Setup).
-2.  Ensure the **frontend development server is running** (see Frontend Setup).
-3.  Open your web browser and navigate to the frontend application's URL (typically `http://localhost:3000`).
+### 2. Frontend Setup
 
-## How to Use
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-1.  **Select an Event Occurrence:**
-    *   Upon loading, the application will fetch and display a list of your live Eventbrite event occurrences.
-    *   The list is formatted as: "`<Event Series Name>` - `<Occurrence Name>` - `Date @ Time`".
-    *   Click on an event occurrence from the list to select it for capacity management.
+### 3. Access the Application
 
-2.  **Manage Ticket Class Capacities:**
-    *   Once an occurrence is selected, its ticket classes will be displayed.
-    *   For each ticket class, you will see:
-        *   **Ticket Class Name and ID.**
-        *   **API Capacity:** The current capacity as set on Eventbrite.
-        *   **Sold:** The number of tickets sold for that class.
-        *   **App-Modified Count:** A value stored in your browser's local storage that represents the cumulative capacity adjustments made *by this application* over time, relative to the original Eventbrite capacity. This helps you track how much you've manually increased or decreased capacity using this tool.
-    *   **Modify Capacity:**
-        *   Use the **`+`** and **`-`** buttons to increment or decrement the desired capacity.
-        *   Alternatively, you can directly type a new total capacity into the input field.
-        *   These changes are staged locally in the browser and are reflected in the input field. They are not yet saved to Eventbrite.
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
 
-3.  **Save Changes:**
-    *   After making your desired capacity adjustments for one or more ticket classes of the selected occurrence, click the **"Save All Changes for This Occurrence"** button.
-    *   The application will then:
-        *   Send requests to the backend to update the capacities on Eventbrite for each modified ticket class.
-        *   Update the "App-Modified Count" in your browser's local storage to reflect the changes just applied.
-        *   Display results of the save operation (success or failure for each ticket class).
-        *   Refresh the event data to show the latest capacities from Eventbrite.
+## 🎯 Usage
 
-4.  **Refresh Events:**
-    *   Click the "Refresh Events" button in the header at any time to reload the list of events and their current capacities from Eventbrite.
+### Managing Eventbrite Events
 
----
+1. **Browse Series**: View all event series in the left panel
+2. **Select Event**: Click on any event occurrence to select it
+3. **Manage Capacity**: Use the capacity manager to increment/decrement tickets
 
-This README provides a comprehensive guide for setting up and using the Eventbrite Capacity Manager.
+### Managing WooCommerce Events
+
+1. **Browse Products**: View all FooEvents products in the right panel
+2. **Select Date/Slot**: Click on any specific date and time slot
+3. **View Real Data**: See accurate ticket sales from WordPress database
+4. **Monitor Status**: Error indicators show when database is unavailable
+
+### Key Features
+
+- **Automatic Detection**: System automatically detects FooEvents Bookings vs normal FooEvents
+- **Real Ticket Data**: Shows actual tickets sold from WordPress database
+- **Error Handling**: Clear indicators when systems are unavailable
+- **Unified Interface**: Manage both platforms from single dashboard
+
+## 🔧 Configuration
+
+### Event Types Supported
+
+1. **FooEvents Bookings**: Multi-slot events (8pm Show, 10pm Show)
+   - Used for: Weekly shows (Sunday Night, Monday Night, etc.)
+   - Features: Multiple time slots, date ranges, booking configuration
+
+2. **Normal FooEvents**: Single show events
+   - Used for: Special events (Robyn & Jason, Mike Rita, etc.)
+   - Features: Single date/time, simpler configuration
+
+### Database Integration
+
+The system uses direct WordPress database access to get accurate ticket sales:
+- **With Database**: Shows real tickets sold and calculated total capacity
+- **Without Database**: Shows error indicators instead of incorrect estimates
+
+## 📊 API Endpoints
+
+### Eventbrite
+- `GET /capacity` - Get current capacity
+- `POST /capacity/increment` - Increase capacity by 1
+- `POST /capacity/decrement` - Decrease capacity by 1
+- `GET /series` - Get all event series
+- `GET /events/{event_id}/ticket-classes` - Get ticket classes
+
+### WooCommerce
+- `GET /woocommerce/products` - Get all FooEvents products
+- `POST /woocommerce/products/sync` - Force refresh from API
+- `GET /woocommerce/products/{product_id}` - Get specific product
+- `GET /woocommerce/wordpress-db-status` - Check database status
+
+### Debug & Monitoring
+- `GET /config` - Get current configuration
+- `GET /woocommerce/debug/product/{product_id}` - Debug product data
+- `GET /woocommerce/debug/wordpress-tickets/{product_id}` - Debug ticket data
+
+## 🔒 Security
+
+- Environment variables for all sensitive credentials
+- No credentials stored in code
+- Secure API authentication
+- Database connection with proper error handling
+
+## 🛠️ Development
+
+### Backend Development
+```bash
+cd backend
+python run_dev.py  # Auto-reload enabled
+```
+
+### Frontend Development
+```bash
+cd frontend
+npm run dev  # Hot module replacement
+```
+
+### Testing Database Integration
+```bash
+# Check WordPress database status
+curl http://localhost:8000/woocommerce/wordpress-db-status
+
+# Debug specific product
+curl http://localhost:8000/woocommerce/debug/product/31907
+```
+
+## 📈 Current Status
+
+✅ **Fully Functional**
+- Eventbrite capacity management
+- WooCommerce product browsing
+- WordPress database integration
+- Real ticket sales data
+- Error handling and fallbacks
+- Dual event type support (Bookings + Normal FooEvents)
+
+📊 **Live Data**
+- 17 WooCommerce products
+- 34 time slots
+- 500+ event dates
+- Real-time ticket sales from WordPress database
+
+## 🆘 Troubleshooting
+
+See `ENVIRONMENT_SETUP.md` for detailed setup instructions including:
+- DirectAdmin database configuration
+- Remote database access setup
+- Environment variable configuration
+- Common issues and solutions
+
+## 📚 Documentation
+
+- `DEVELOPMENT.md` - Technical details and file dependencies
+- `DESIGN.md` - Architecture and design decisions
+- `ENVIRONMENT_SETUP.md` - Detailed setup instructions
+- `references_docs/` - FooEvents plugin documentation
