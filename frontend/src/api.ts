@@ -319,9 +319,9 @@ export const api = {
     return makeRequest<OrganizationSeriesResponse>('/series');
   },
 
-  // Sync organization series (force refresh from API)
-  async syncOrganizationSeries(): Promise<OrganizationSeriesResponse> {
-    return makeRequest<OrganizationSeriesResponse>('/series/sync', {
+  // Refresh organization series (force refresh from API)
+  async refreshOrganizationSeries(): Promise<OrganizationSeriesResponse> {
+    return makeRequest<OrganizationSeriesResponse>('/series/refresh', {
       method: 'POST',
     });
   },
@@ -348,9 +348,9 @@ export const api = {
     return makeRequest<WooCommerceProductsResponse>('/woocommerce/products');
   },
 
-  // Sync WooCommerce products (force refresh from API)
-  async syncWooCommerceProducts(): Promise<WooCommerceProductsResponse> {
-    return makeRequest<WooCommerceProductsResponse>('/woocommerce/products/sync', {
+  // Refresh WooCommerce products (force refresh from API)
+  async refreshWooCommerceProducts(): Promise<WooCommerceProductsResponse> {
+    return makeRequest<WooCommerceProductsResponse>('/woocommerce/products/refresh', {
       method: 'POST',
     });
   },
@@ -404,6 +404,31 @@ export const api = {
     });
   },
 
+  // Set WooCommerce inventory to a specific value
+  async setWooCommerceInventory(productId: number, slotId: string, dateId: string, newStock: number): Promise<CapacityUpdateResponse> {
+    return makeRequest<CapacityUpdateResponse>('/woocommerce/inventory/set', {
+      method: 'POST',
+      body: JSON.stringify({
+        product_id: productId,
+        slot_id: slotId,
+        date_id: dateId,
+        new_stock: newStock,
+      }),
+    });
+  },
+
+  // Set Eventbrite capacity to a specific value
+  async setEventbriteCapacity(eventId: string, ticketClassId: string, newCapacity: number): Promise<CapacityUpdateResponse> {
+    return makeRequest<CapacityUpdateResponse>('/capacity/set', {
+      method: 'POST',
+      body: JSON.stringify({
+        event_id: eventId,
+        ticket_class_id: ticketClassId,
+        new_capacity: newCapacity,
+      }),
+    });
+  },
+
   // Event Mapping methods
 
   // Get all mappings and unmapped events
@@ -444,6 +469,15 @@ export const api = {
     return makeRequest<ComparisonGroupResponse>(`/mappings/${mappingId}/send-to-compare`, {
       method: 'POST',
     });
+  },
+
+  // Refresh WooCommerce product/slot/date (force fresh from API)
+  async refreshWooCommerce(productId: number, slotId?: string, dateId?: string): Promise<WooCommerceProductsResponse> {
+    const params = new URLSearchParams();
+    params.append('product_id', String(productId));
+    if (slotId) params.append('slot_id', slotId);
+    if (dateId) params.append('date_id', dateId);
+    return makeRequest<WooCommerceProductsResponse>(`/woocommerce/refresh?${params.toString()}`);
   },
 };
 

@@ -12,7 +12,7 @@ const SeriesViewer: React.FC<SeriesViewerProps> = ({ onOccurrenceSelect, initial
   const [series, setSeries] = useState<EventSeries[]>([]);
   const [, setSelectedSeries] = useState<EventSeries | null>(null);
   const [loading, setLoading] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(false);
   const [cacheInfo, setCacheInfo] = useState<CacheInfo | null>(null);
@@ -46,7 +46,7 @@ const SeriesViewer: React.FC<SeriesViewerProps> = ({ onOccurrenceSelect, initial
   };
 
   // Load series data (from cache by default)
-  const loadSeries = async (forceSync: boolean = false) => {
+  const loadSeries = async (forceRefresh: boolean = false) => {
     if (!isOnline) return;
     
     setLoading(true);
@@ -54,9 +54,9 @@ const SeriesViewer: React.FC<SeriesViewerProps> = ({ onOccurrenceSelect, initial
     
     try {
       let response;
-      if (forceSync) {
-        setSyncing(true);
-        response = await api.syncOrganizationSeries();
+      if (forceRefresh) {
+        setRefreshing(true);
+        response = await api.refreshOrganizationSeries();
       } else {
         response = await api.getOrganizationSeries();
       }
@@ -76,12 +76,12 @@ const SeriesViewer: React.FC<SeriesViewerProps> = ({ onOccurrenceSelect, initial
       setError(errorMessage);
     } finally {
       setLoading(false);
-      setSyncing(false);
+      setRefreshing(false);
     }
   };
 
-  // Handle sync button click
-  const handleSync = async () => {
+  // Handle refresh button click
+  const handleRefresh = async () => {
     await loadSeries(true);
   };
 
@@ -212,13 +212,13 @@ const SeriesViewer: React.FC<SeriesViewerProps> = ({ onOccurrenceSelect, initial
           </div>
           {isOnline && !isCollapsed && (
             <button 
-              className="btn btn-sync" 
-              onClick={handleSync}
-              disabled={syncing || loading}
-              title="Sync fresh data from Eventbrite API"
+              className="btn btn-refresh" 
+              onClick={handleRefresh}
+              disabled={refreshing || loading}
+              title="Refresh fresh data from Eventbrite API"
             >
-              <span className="btn-icon">{syncing ? '⏳' : '🔄'}</span>
-              {syncing ? 'Syncing...' : 'Sync'}
+              <span className="btn-icon">{refreshing ? '⏳' : '🔄'}</span>
+              {refreshing ? 'Refreshing...' : 'Refresh'}
             </button>
           )}
         </div>
@@ -246,14 +246,14 @@ const SeriesViewer: React.FC<SeriesViewerProps> = ({ onOccurrenceSelect, initial
             </div>
           )}
 
-          {(loading || syncing) && (
+          {(loading || refreshing) && (
             <div className="series-loading">
               <div className="spinner"></div>
-              <span>{syncing ? 'Syncing with Eventbrite API...' : 'Loading event series...'}</span>
+              <span>{refreshing ? 'Refreshing with Eventbrite API...' : 'Loading event series...'}</span>
             </div>
           )}
 
-          {!loading && !syncing && series.length > 0 && (
+          {!loading && !refreshing && series.length > 0 && (
             <div className="series-content">
               <div className="series-summary">
                 <p>
@@ -324,11 +324,11 @@ const SeriesViewer: React.FC<SeriesViewerProps> = ({ onOccurrenceSelect, initial
             </div>
           )}
 
-          {!loading && !syncing && !error && series.length === 0 && isOnline && (
+          {!loading && !refreshing && !error && series.length === 0 && isOnline && (
             <div className="series-empty">
               <p>No event series found that are currently on sale.</p>
               <button onClick={() => loadSeries(true)} className="btn btn-refresh">
-                🔄 Sync from API
+                🔄 Refresh from API
               </button>
             </div>
           )}

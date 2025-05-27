@@ -654,14 +654,14 @@ class WooCommerceClient:
                 with open(self.cache_file, 'r', encoding='utf-8') as f:
                     cached_data = json.load(f)
                 
-                # Check if cache is less than 1 hour old
+                # Check if cache is less than 999 hours old
                 last_updated = cached_data.get('last_updated')
                 if last_updated:
                     cache_time = datetime.fromisoformat(last_updated)
                     now = datetime.now(timezone.utc)
                     age_hours = (now - cache_time).total_seconds() / 3600
                     
-                    if age_hours < 1:  # Cache is fresh
+                    if age_hours < 999:  # Cache is fresh
                         cached_data['cache_source'] = 'cache'
                         cached_data['cache_age_minutes'] = int((now - cache_time).total_seconds() / 60)
                         return cached_data
@@ -1430,4 +1430,133 @@ class WooCommerceClient:
             return earliest_date.isoformat()
         else:
             # Fallback: use product name for consistent sorting
-            return product.get('product_name', 'zzz_unknown') 
+            return product.get('product_name', 'zzz_unknown')
+
+    async def set_woocommerce_inventory(self, product_id: int, slot_id: str = None, date_id: str = None, new_stock: int = 0) -> Dict[str, Any]:
+        """
+        Set WooCommerce inventory to a specific value for a product/slot/date.
+        Args:
+            product_id: The WooCommerce product ID
+            slot_id: The slot ID (required for FooEvents Bookings)
+            date_id: The date ID (required for FooEvents Bookings)
+            new_stock: The new stock value to set
+        Returns:
+            Dict with old_stock, new_stock, and updated inventory data
+        """
+        try:
+            product_data = await self.get_product_data(product_id)
+            booking_data = self.extract_fooevents_data(product_data)
+            if not booking_data:
+                raise WooCommerceAPIError(f"No FooEvents data found for product {product_id}")
+            if not slot_id or not date_id:
+                raise WooCommerceAPIError(f"Both slot_id and date_id are required for inventory management")
+            if slot_id not in booking_data:
+                raise WooCommerceAPIError(f"Slot {slot_id} not found in product {product_id}")
+            slot_data = booking_data[slot_id]
+            is_real_bookings_product = self._is_real_bookings_product(product_data)
+            if is_real_bookings_product:
+                add_date = slot_data.get('add_date', {})
+                is_nested_structure = isinstance(add_date, dict) and add_date
+                if is_nested_structure:
+                    if date_id not in add_date:
+                        raise WooCommerceAPIError(f"Date {date_id} not found in slot {slot_id} for product {product_id}")
+                    date_info = add_date[date_id]
+                    old_stock = date_info.get('stock', '0')
+                    try:
+                        old_stock_int = int(old_stock) if old_stock != '' else 0
+                    except (ValueError, TypeError):
+                        old_stock_int = 0
+                    new_stock_int = int(new_stock)
+                    date_info['stock'] = str(new_stock_int)
+                    await self._update_product_booking_data(product_id, booking_data)
+                    slot_label = slot_data.get('label')
+                    date_str = date_info.get('date')
+                    if slot_label and date_str:
+                        tickets_sold = self.wp_db.get_tickets_sold_for_date(product_id, slot_label, date_str) if self.wp_db_available else 0
+                        new_total_capacity = new_stock_int + (tickets_sold or 0)
+                    else:
+                        new_total_capacity = new_stock_int
+                        tickets_sold = 0
+                    return {
+                        'product_id': product_id,
+                        'product_name': product_data.get('name'),
+                        'slot_id': slot_id,
+                        'slot_label': slot_data.get('label'),
+                        'date_id': date_id,
+                        'date': date_info.get('date'),
+                        'old_stock': old_stock_int,
+                        'new_stock': new_stock_int,
+                        'stock': new_stock_int,
+                        'available': new_stock_int,
+                        'total_capacity': new_total_capacity,
+                        'tickets_sold': tickets_sold or 0
+                    }
+                else:
+                    stock_key = f'{date_id}_stock'
+                    date_key = f'{date_id}_add_date'
+                    if stock_key not in slot_data:
+                        raise WooCommerceAPIError(f"Stock field {stock_key} not found in slot {slot_id} for product {product_id}")
+                    old_stock = slot_data[stock_key]
+                    try:
+                        old_stock_int = int(old_stock) if old_stock != '' else 0
+                    except (ValueError, TypeError):
+                        old_stock_int = 0
+                    new_stock_int = int(new_stock)
+                    slot_data[stock_key] = str(new_stock_int)
+                    await self._update_product_booking_data(product_id, booking_data)
+                    slot_label = slot_data.get('label')
+                    date_str = slot_data.get(date_key, 'Unknown Date')
+                    if slot_label and date_str != 'Unknown Date':
+                        tickets_sold = self.wp_db.get_tickets_sold_for_date(product_id, slot_label, date_str) if self.wp_db_available else 0
+                        new_total_capacity = new_stock_int + (tickets_sold or 0)
+                    else:
+                        total_tickets_sold = self.wp_db.get_total_tickets_sold_for_product(product_id) if self.wp_db_available else 0
+                        new_total_capacity = new_stock_int + (total_tickets_sold or 0)
+                        tickets_sold = total_tickets_sold
+                    return {
+                        'product_id': product_id,
+                        'product_name': product_data.get('name'),
+                        'slot_id': slot_id,
+                        'slot_label': slot_data.get('label'),
+                        'date_id': date_id,
+                        'date': slot_data.get(date_key, 'Unknown Date'),
+                        'old_stock': old_stock_int,
+                        'new_stock': new_stock_int,
+                        'stock': new_stock_int,
+                        'available': new_stock_int,
+                        'total_capacity': new_total_capacity,
+                        'tickets_sold': tickets_sold if 'tickets_sold' in locals() else total_tickets_sold or 0
+                    }
+            else:
+                old_stock_quantity = product_data.get('stock_quantity', 0)
+                try:
+                    old_stock_int = int(old_stock_quantity) if old_stock_quantity is not None else 0
+                except (ValueError, TypeError):
+                    old_stock_int = 0
+                new_stock_int = int(new_stock)
+                await self._update_product_stock_quantity(product_id, new_stock_int)
+                slot_label = slot_data.get('label')
+                date_key = f'{date_id}_add_date'
+                date_str = slot_data.get(date_key, 'Unknown Date')
+                if self.wp_db_available:
+                    total_tickets_sold = self.wp_db.get_total_tickets_sold_for_product(product_id) or 0
+                    new_total_capacity = new_stock_int + total_tickets_sold
+                else:
+                    total_tickets_sold = 0
+                    new_total_capacity = new_stock_int
+                return {
+                    'product_id': product_id,
+                    'product_name': product_data.get('name'),
+                    'slot_id': slot_id,
+                    'slot_label': slot_label,
+                    'date_id': date_id,
+                    'date': date_str,
+                    'old_stock': old_stock_int,
+                    'new_stock': new_stock_int,
+                    'stock': new_stock_int,
+                    'available': new_stock_int,
+                    'total_capacity': new_total_capacity,
+                    'tickets_sold': total_tickets_sold
+                }
+        except Exception as e:
+            raise WooCommerceAPIError(f"Failed to set inventory for product {product_id}: {str(e)}") 

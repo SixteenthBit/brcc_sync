@@ -3,13 +3,14 @@ FastAPI backend for Eventbrite Capacity Manager and WooCommerce FooEvents
 """
 
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
 from eventbrite import EventbriteClient, EventbriteAPIError
 from woocommerce import WooCommerceClient, WooCommerceAPIError
 from event_mappings import EventMappingManager, EventMapping, UnmappedEvent
+import logging
 
 app = FastAPI(title="Eventbrite Capacity Manager & WooCommerce FooEvents", version="1.0.0")
 
@@ -55,6 +56,17 @@ class UpdateMappingRequest(BaseModel):
 
 class SendToCompareRequest(BaseModel):
     mapping_id: str
+
+class SetWooCommerceInventoryRequest(BaseModel):
+    product_id: int
+    slot_id: Optional[str] = None
+    date_id: Optional[str] = None
+    new_stock: int
+
+class SetEventbriteCapacityRequest(BaseModel):
+    event_id: str
+    ticket_class_id: str
+    new_capacity: int
 
 @app.get("/")
 async def root():
@@ -124,6 +136,62 @@ async def decrement_capacity(request: CapacityRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+@app.post("/capacity/set")
+async def set_eventbrite_capacity(request: SetEventbriteCapacityRequest):
+    """Set Eventbrite ticket class capacity to a specific value for an event/ticket class"""
+    try:
+        logging.info(f"[SET CAPACITY] event_id={request.event_id}, ticket_class_id={request.ticket_class_id}, new_capacity={request.new_capacity}")
+        if request.new_capacity < 0:
+            logging.error("Capacity must be non-negative")
+            raise HTTPException(status_code=400, detail="Capacity must be non-negative")
+        client = EventbriteClient()
+        ticket_class = await client.get_ticket_class_details(request.event_id, request.ticket_class_id)
+        if not ticket_class:
+            logging.error("Ticket class not found")
+            raise HTTPException(status_code=404, detail="Ticket class not found")
+        current_capacity = ticket_class.get('capacity')
+        if not isinstance(current_capacity, int):
+            logging.error(f"Current capacity is not a number: {current_capacity}")
+            raise HTTPException(status_code=400, detail="Current capacity is not a number")
+        tickets_sold = ticket_class.get("quantity_sold", 0)
+        if request.new_capacity < tickets_sold:
+            logging.error(f"Cannot set below tickets sold ({tickets_sold})")
+            raise HTTPException(status_code=400, detail=f"Cannot set below tickets sold ({tickets_sold})")
+        # Set capacity
+        try:
+            result = await client.update_ticket_class_capacity(request.event_id, request.ticket_class_id, request.new_capacity)
+        except Exception as e:
+            logging.error(f"Error updating capacity: {e}")
+            raise HTTPException(status_code=500, detail=f"Error updating capacity: {e}")
+        if not result:
+            logging.error(f"Update failed: {result}")
+            raise HTTPException(status_code=500, detail=f"Update failed: {result}")
+        # Get updated ticket class details
+        updated_ticket_class = await client.get_ticket_class_details(request.event_id, request.ticket_class_id)
+        new_capacity = updated_ticket_class.get('capacity')
+        quantity_sold = updated_ticket_class.get('quantity_sold', 0)
+        available = new_capacity - quantity_sold if new_capacity is not None else None
+        logging.info(f"[SET CAPACITY SUCCESS] old_capacity={current_capacity}, new_capacity={new_capacity}")
+        return {
+            "success": True,
+            "message": f"Capacity set to {request.new_capacity}",
+            "data": {
+                "old_capacity": current_capacity,
+                "new_capacity": new_capacity,
+                "quantity_sold": quantity_sold,
+                "available": available,
+                "ticket_class_name": ticket_class.get('name'),
+                "ticket_class_id": ticket_class.get('id'),
+                "event_id": request.event_id,
+                "api_response": result
+            }
+        }
+    except HTTPException as e:
+        raise
+    except Exception as e:
+        logging.error(f"Unhandled error in /capacity/set: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/series")
 async def get_organization_series():
     """Get all event series for the organization that are currently on sale (uses cache by default)"""
@@ -150,16 +218,16 @@ async def get_organization_series():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
-@app.post("/series/sync")
-async def sync_organization_series():
+@app.post("/series/refresh")
+async def refresh_organization_series():
     """Force refresh of event series data from Eventbrite API"""
     try:
         client = EventbriteClient()
-        result = await client.get_organization_series(use_cache=False)
+        result = await client.refresh_organization_series()
         
         return CapacityResponse(
             success=True,
-            message=f"Successfully synced {result['total_series_count']} series with {result['total_events_on_sale']} events on sale from Eventbrite API",
+            message=f"Successfully refreshed {result['total_series_count']} series with {result['total_events_on_sale']} events on sale from Eventbrite API",
             data=result
         )
     except EventbriteAPIError as e:
@@ -238,16 +306,16 @@ async def get_woocommerce_products():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
-@app.post("/woocommerce/products/sync")
-async def sync_woocommerce_products():
+@app.post("/woocommerce/products/refresh")
+async def refresh_woocommerce_products():
     """Force refresh of WooCommerce products data from API"""
     try:
         client = WooCommerceClient()
-        result = await client.get_all_fooevents_products(use_cache=False)
+        result = await client.refresh_woocommerce_products()
         
         return CapacityResponse(
             success=True,
-            message=f"Successfully synced {result['total_products']} products with {result['total_slots']} slots and {result['total_dates']} dates from WooCommerce API",
+            message=f"Successfully refreshed {result['total_products']} products with {result['total_slots']} slots and {result['total_dates']} dates from WooCommerce API",
             data=result
         )
     except WooCommerceAPIError as e:
@@ -473,6 +541,83 @@ async def debug_wordpress_tickets(product_id: int):
             "error": str(e),
             "product_id": product_id
         }
+
+@app.post("/woocommerce/inventory/set")
+async def set_woocommerce_inventory(request: SetWooCommerceInventoryRequest):
+    """Set WooCommerce inventory to a specific value for a product/slot/date"""
+    try:
+        client = WooCommerceClient()
+        # Get current inventory info for validation
+        current_info = await client.get_product_inventory(request.product_id, request.slot_id, request.date_id)
+        tickets_sold = 0
+        if 'tickets_sold' in current_info:
+            try:
+                tickets_sold = int(current_info['tickets_sold'])
+            except Exception:
+                tickets_sold = 0
+        if request.new_stock < 0:
+            raise HTTPException(status_code=400, detail="New stock must be non-negative")
+        if request.new_stock < tickets_sold:
+            raise HTTPException(status_code=400, detail=f"New stock ({request.new_stock}) cannot be less than tickets sold ({tickets_sold})")
+        # Reuse update logic from increment/decrement
+        result = await client.set_woocommerce_inventory(request.product_id, request.slot_id, request.date_id, request.new_stock)
+        return CapacityResponse(
+            success=True,
+            message=f"Successfully set inventory to {request.new_stock}",
+            data=result
+        )
+    except WooCommerceAPIError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.get("/woocommerce/refresh")
+async def refresh_woocommerce(
+    product_id: int = Query(..., description="WooCommerce product ID"),
+    slot_id: Optional[str] = Query(None, description="Slot ID (optional)"),
+    date_id: Optional[str] = Query(None, description="Date ID (optional)")
+):
+    """
+    Force refresh of WooCommerce product/slot/date from API (not cache).
+    Returns the same structure as the existing product/slot/date endpoints.
+    """
+    try:
+        client = WooCommerceClient()
+        # Always use fresh API data
+        product_data = await client.get_product_data(product_id)
+        booking_data = client.extract_fooevents_data(product_data)
+        if not booking_data:
+            raise WooCommerceAPIError(f"No FooEvents data found for product {product_id}")
+        formatted_slots = client.format_booking_slots(product_data, booking_data)
+        # Filter slots/dates if needed
+        if slot_id:
+            filtered_slots = [s for s in formatted_slots if s['slot_id'] == slot_id]
+            if date_id and filtered_slots:
+                for slot in filtered_slots:
+                    slot['dates'] = [d for d in slot['dates'] if d['date_id'] == date_id]
+            formatted_slots = filtered_slots
+        product_result = {
+            'product_id': product_id,
+            'product_name': product_data.get('name'),
+            'product_price': product_data.get('price', '0'),
+            'total_sales': product_data.get('total_sales', 0),
+            'slots': formatted_slots,
+            'slot_count': len(formatted_slots)
+        }
+        return CapacityResponse(
+            success=True,
+            message=f"Refreshed product {product_id}",
+            data={
+                'products': [product_result],
+                'total_products': 1,
+                'total_slots': len(formatted_slots),
+                'total_dates': sum(len(s['dates']) for s in formatted_slots)
+            }
+        )
+    except WooCommerceAPIError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 # Event Mapping endpoints
 

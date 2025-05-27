@@ -1970,18 +1970,6 @@
       ]
     },
     {
-      "series_id": "1368836570029",
-      "series_name": "Mike Rita - Big In Little Portugal | One Night Only!",
-      "event_count": 1,
-      "events": [
-        {
-          "occurrence_id": "1368841574999",
-          "start_date": "2025-06-07T22:00:00",
-          "url": "https://www.eventbrite.ca/e/mike-rita-big-in-little-portugal-one-night-only-tickets-1368841574999"
-        }
-      ]
-    },
-    {
       "series_id": "1364876796239",
       "series_name": "Comedy Open House @ Backroom Comedy Club – Ask Us Anything!",
       "event_count": 1,
@@ -2099,8 +2087,8 @@
       ]
     }
   ],
-  "total_series_count": 21,
-  "total_events_on_sale": 390,
-  "last_updated": "2025-05-27T09:05:59.263720+00:00",
+  "total_series_count": 20,
+  "total_events_on_sale": 389,
+  "last_updated": "2025-05-27T18:59:24.026058+00:00",
   "cache_source": "api"
 }

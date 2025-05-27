@@ -1,13 +1,14 @@
 [
   {
-    "id": "user_4156_1748340730",
+    "id": "user_4156_1748359006",
     "name": "Monday Night at Backroom Comedy Club (Custom Mapping)",
     "woocommerce_product_id": "4156",
     "eventbrite_series_ids": [
+      "1363374151789",
       "969715062857"
     ],
     "mapping_source": "user_override",
     "is_active": true,
-    "last_updated": "2025-05-27T06:12:10.704064"
+    "last_updated": "2025-05-27T11:16:46.957019"
   }
 ]

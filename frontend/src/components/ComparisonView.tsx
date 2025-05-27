@@ -8,6 +8,7 @@ interface ComparisonViewProps {
   selectedEvents: SelectedEvent[];
   onEventSelect: (event: SelectedEvent) => void;
   onClearSelections: () => void;
+  replaceSelectedEvent: (oldEvent: SelectedEvent, newEvent: SelectedEvent) => void;
 }
 
 interface EventDetails {
@@ -47,10 +48,37 @@ interface DataState {
   error: string | null;
 }
 
+const parseWooCommerceId = (id: string) => {
+  const parts = id.split('_');
+  const productId = parseInt(parts[0], 10);
+  const slotId = parts.length > 1 ? parts[1] : null;
+  const dateId = parts.length > 2 ? parts[2] : null;
+  return { productId, slotId, dateId };
+};
+
+const parseEventbriteId = (id: string) => {
+  const parts = id.split('_');
+  const seriesId = parts[0];
+  const occurrenceId = parts.length > 1 ? parts[1] : seriesId;
+  return { seriesId, occurrenceId };
+};
+
+const getEventSold = (event: SelectedEvent): number => {
+  if (event.type === 'woocommerce') {
+    const details = event.details;
+    return details?.sold || 0;
+  } else if (event.type === 'eventbrite') {
+    const details = event.details;
+    return details?.quantity_sold || 0;
+  }
+  return 0;
+};
+
 const ComparisonView: React.FC<ComparisonViewProps> = ({
   selectedEvents,
   onEventSelect,
-  onClearSelections
+  onClearSelections,
+  replaceSelectedEvent
 }) => {
   const [eventDetails, setEventDetails] = useState<Record<string, EventDetails>>({});
   const [dataState, setDataState] = useState<DataState>({
@@ -59,6 +87,13 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
     loading: false,
     error: null
   });
+  const [setInputs, setSetInputs] = useState<Record<string, string>>({});
+  const [setErrors, setSetErrors] = useState<Record<string, string>>({});
+  const [totalCapacity, setTotalCapacity] = useState<number>(55);
+  // Only for cross-service inventory sync
+  const [syncLoading, setSyncLoading] = useState<boolean>(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncSuccess, setSyncSuccess] = useState<boolean>(false);
 
   // Load data on component mount
   useEffect(() => {
@@ -202,25 +237,21 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
         name: `${series.series_name} (${formatDate(occurrence.start_date)})`,
         details: occurrence
       };
-      
-      // Remove old event and add new one
-      onEventSelect(currentEvent); // Remove current
-      onEventSelect(newEvent); // Add new
+      // Replace old event with new one
+      replaceSelectedEvent(currentEvent, newEvent);
     }
   };
 
   // Handle changing WooCommerce product/slot/date
   const handleWooCommerceChange = (currentEvent: SelectedEvent, productId?: number, slotId?: string, dateId?: string) => {
     if (!productId || !slotId || !dateId) return;
-    
     const product = dataState.woocommerceProducts.find(p => p.product_id === productId);
     const slot = product?.slots.find(s => s.slot_id === slotId);
     const date = slot?.dates.find(d => d.date_id === dateId);
-    
     if (product && slot && date) {
       const newEvent: SelectedEvent = {
         type: 'woocommerce',
-        id: `${productId}-${slotId}-${date.date_id}`,
+        id: `${productId}-${slotId}-${dateId}`,
         name: `${product.product_name} - ${slot.slot_label} (${date.date})`,
         details: {
           productId: productId,
@@ -237,10 +268,8 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
           price: product.product_price || '0'
         }
       };
-      
-      // Remove old event and add new one
-      onEventSelect(currentEvent); // Remove current
-      onEventSelect(newEvent); // Add new
+      // Replace old event with new one
+      replaceSelectedEvent(currentEvent, newEvent);
     }
   };
 
@@ -249,13 +278,12 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
     if (type === 'eventbrite' && seriesId && occurrenceId) {
       const series = dataState.eventbriteSeries.find(s => s.series_id === seriesId);
       const occurrence = series?.events.find(e => e.occurrence_id === occurrenceId);
-      
       if (series && occurrence) {
         const newEvent: SelectedEvent = {
           type: 'eventbrite',
           id: occurrence.occurrence_id,
           name: `${series.series_name} (${formatDate(occurrence.start_date)})`,
-          details: occurrence
+          details: { ...occurrence, series_id: series.series_id }
         };
         onEventSelect(newEvent);
       }
@@ -263,11 +291,10 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
       const product = dataState.woocommerceProducts.find(p => p.product_id === productId);
       const slot = product?.slots.find(s => s.slot_id === slotId);
       const date = slot?.dates.find(d => d.date_id === dateId);
-      
       if (product && slot && date) {
         const newEvent: SelectedEvent = {
           type: 'woocommerce',
-          id: `${productId}-${slotId}-${date.date_id}`,
+          id: `${productId}-${slotId}-${dateId}`,
           name: `${product.product_name} - ${slot.slot_label} (${date.date})`,
           details: {
             productId: productId,
@@ -500,18 +527,30 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
   const getEventCurrentData = (event: SelectedEvent) => {
     if (event.type === 'eventbrite') {
       const currentSeries = dataState.eventbriteSeries.find(s => 
-        s.events.some(e => e.occurrence_id === event.id)
+        s.events.some(e => e.occurrence_id === (event.details?.occurrence_id || event.id))
       );
       return {
         currentSeriesId: currentSeries?.series_id || '',
-        currentOccurrenceId: event.id
+        currentOccurrenceId: event.details?.occurrence_id || event.id
       };
     } else {
-      const parts = event.id.split('-');
+      // Prefer details, fallback to parsing id
+      const productId = event.details?.productId ?? (() => {
+        const parts = event.id.split('-');
+        return parseInt(parts[0]) || 0;
+      })();
+      const slotId = event.details?.slotId ?? (() => {
+        const parts = event.id.split('-');
+        return parts[1] || '';
+      })();
+      const dateId = event.details?.dateId ?? (() => {
+        const parts = event.id.split('-');
+        return parts[2] || '';
+      })();
       return {
-        currentProductId: parseInt(parts[0]) || 0,
-        currentSlotId: parts[1] || '',
-        currentDateId: parts[2] || ''
+        currentProductId: productId,
+        currentSlotId: slotId,
+        currentDateId: dateId
       };
     }
   };
@@ -556,6 +595,9 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
     const selectedProduct = dataState.woocommerceProducts.find(p => p.product_id === parseInt(newProductId));
     const selectedSlot = selectedProduct?.slots.find(s => s.slot_id === newSlotId);
     const isAtMaximum = selectedEvents.length >= 10;
+
+    // In NewEventRow, show a spinner in the Add button if any new event is loading
+    const isAnyNewEventLoading = Object.values(eventDetails).some(d => d.status === 'loading');
 
     return (
       <tr className={`add-event-row ${isAtMaximum ? 'disabled' : ''}`}>
@@ -613,6 +655,12 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                 </option>
               ))}
             </select>
+          )}
+          {newEventType === 'eventbrite' && selectedSeries && (
+            <span className="inline-spinner"><Spinner size="tiny" /></span>
+          )}
+          {newEventType === 'woocommerce' && selectedProduct && (
+            <span className="inline-spinner"><Spinner size="tiny" /></span>
           )}
         </td>
 
@@ -692,16 +740,404 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
             disabled={
               isAtMaximum ||
               (newEventType === 'eventbrite' && (!newSeriesId || !newOccurrenceId)) ||
-              (newEventType === 'woocommerce' && (!newProductId || !newSlotId || !newDateId))
+              (newEventType === 'woocommerce' && (!newProductId || !newSlotId || !newDateId)) ||
+              isAnyNewEventLoading
             }
             title={isAtMaximum ? "Maximum 10 events reached" : "Add event to comparison"}
           >
-            {isAtMaximum ? '✕' : '+'}
+            {isAnyNewEventLoading ? <Spinner size="tiny" /> : (isAtMaximum ? '✕' : '+')}
           </button>
         </td>
       </tr>
     );
   };
+
+  // Add set handlers for WooCommerce and Eventbrite
+  const handleSetWooCommerce = async (eventKey: string, event: SelectedEvent, details: EventDetails) => {
+    const value = setInputs[eventKey];
+    if (!value) return;
+    const newStock = parseInt(value, 10);
+    if (isNaN(newStock) || newStock < 0) {
+      setSetErrors(prev => ({ ...prev, [eventKey]: 'Enter a non-negative number' }));
+      return;
+    }
+    const currentData = getEventCurrentData(event);
+    const ticketsSold = typeof details.sold === 'number' ? details.sold : 0;
+    if (newStock < ticketsSold) {
+      setSetErrors(prev => ({ ...prev, [eventKey]: `Cannot set below tickets sold (${ticketsSold})` }));
+      return;
+    }
+    setEventDetails(prev => ({ ...prev, [eventKey]: { ...prev[eventKey], inventoryLoading: true, inventoryError: undefined } }));
+    setSetErrors(prev => ({ ...prev, [eventKey]: '' }));
+    try {
+      const result = await api.setWooCommerceInventory(currentData.currentProductId, currentData.currentSlotId, currentData.currentDateId, newStock);
+      setEventDetails(prev => ({
+        ...prev,
+        [eventKey]: {
+          ...prev[eventKey],
+          available: (result.data as any).new_stock,
+          capacity: (result.data as any).total_capacity,
+          sold: (result.data as any).tickets_sold,
+          inventoryLoading: false,
+          lastUpdate: new Date().toISOString()
+        }
+      }));
+      setSetInputs(prev => ({ ...prev, [eventKey]: '' }));
+    } catch (err) {
+      setEventDetails(prev => ({
+        ...prev,
+        [eventKey]: {
+          ...prev[eventKey],
+          inventoryLoading: false,
+          inventoryError: err instanceof ApiError ? err.message : 'Failed to set inventory'
+        }
+      }));
+      setSetErrors(prev => ({ ...prev, [eventKey]: err instanceof ApiError ? err.message : 'Failed to set inventory' }));
+    }
+  };
+
+  const handleSetEventbrite = async (eventKey: string, details: EventDetails) => {
+    const value = setInputs[eventKey];
+    if (!value) return;
+    const newCapacity = parseInt(value, 10);
+    if (isNaN(newCapacity) || newCapacity < 0) {
+      setSetErrors(prev => ({ ...prev, [eventKey]: 'Enter a non-negative number' }));
+      return;
+    }
+    const ticketsSold = typeof details.sold === 'number' ? details.sold : 0;
+    if (newCapacity < ticketsSold) {
+      setSetErrors(prev => ({ ...prev, [eventKey]: `Cannot set below tickets sold (${ticketsSold})` }));
+      return;
+    }
+    setEventDetails(prev => ({ ...prev, [eventKey]: { ...prev[eventKey], capacityLoading: true, capacityError: undefined } }));
+    setSetErrors(prev => ({ ...prev, [eventKey]: '' }));
+    try {
+      const result = await api.setEventbriteCapacity(details.occurrence?.occurrence_id!, details.ticketClass?.id!, newCapacity);
+      setEventDetails(prev => ({
+        ...prev,
+        [eventKey]: {
+          ...prev[eventKey],
+          capacity: (result.data as any).new_capacity,
+          sold: (result.data as any).quantity_sold,
+          available: (result.data as any).available,
+          capacityLoading: false,
+          lastUpdate: new Date().toISOString()
+        }
+      }));
+      setSetInputs(prev => ({ ...prev, [eventKey]: '' }));
+    } catch (err) {
+      setEventDetails(prev => ({
+        ...prev,
+        [eventKey]: {
+          ...prev[eventKey],
+          capacityLoading: false,
+          capacityError: err instanceof ApiError ? err.message : 'Failed to set capacity'
+        }
+      }));
+      setSetErrors(prev => ({ ...prev, [eventKey]: err instanceof ApiError ? err.message : 'Failed to set capacity' }));
+    }
+  };
+
+  // Add this function to refresh event data after updates
+  const refreshData = async () => {
+    await loadEventDetails();
+  };
+
+  // 1. Extract a single-event refresh function
+  const refreshEventDetails = async (event: SelectedEvent) => {
+    const key = `${event.type}-${event.id}`;
+    setEventDetails(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        status: 'loading',
+        error: undefined,
+      },
+    }));
+    try {
+      if (event.type === 'eventbrite') {
+        if (event.details?.occurrence_id) {
+          const ticketClassesResponse = await api.getTicketClasses(event.details.occurrence_id);
+          if (ticketClassesResponse.data.ticket_classes.length > 0) {
+            const firstTicketClass = ticketClassesResponse.data.ticket_classes[0];
+            const capacityResponse = await api.getCurrentCapacity(event.details.occurrence_id, firstTicketClass.id);
+            setEventDetails(prev => ({
+              ...prev,
+              [key]: {
+                ...prev[key],
+                occurrence: event.details,
+                ticketClass: firstTicketClass,
+                capacity: capacityResponse.data.capacity,
+                sold: capacityResponse.data.quantity_sold,
+                available: capacityResponse.data.available,
+                startDate: event.details.start_date,
+                url: event.details.url,
+                status: 'loaded',
+                capacityLoading: false,
+                lastUpdate: new Date().toISOString(),
+                error: undefined,
+              },
+            }));
+          } else {
+            setEventDetails(prev => ({
+              ...prev,
+              [key]: {
+                ...prev[key],
+                occurrence: event.details,
+                startDate: event.details.start_date,
+                url: event.details.url,
+                status: 'loaded',
+                error: 'No ticket classes found',
+              },
+            }));
+          }
+        } else {
+          setEventDetails(prev => ({
+            ...prev,
+            [key]: {
+              ...prev[key],
+              status: 'error',
+              error: 'Missing occurrence details',
+            },
+          }));
+        }
+      } else if (event.type === 'woocommerce') {
+        // Fetch latest data from backend for this product/slot/date (always fresh)
+        const currentData = getEventCurrentData(event);
+        const response = await api.refreshWooCommerce(currentData.currentProductId, currentData.currentSlotId, currentData.currentDateId);
+        const product = response.data.products[0];
+        const slot = product.slots.find(s => s.slot_id === currentData.currentSlotId);
+        const date = slot?.dates.find(d => d.date_id === currentData.currentDateId);
+        if (product && slot && date) {
+          setEventDetails(prev => ({
+            ...prev,
+            [key]: {
+              ...prev[key],
+              product,
+              slot,
+              date,
+              capacity: typeof date.total_capacity === 'number' ? date.total_capacity : undefined,
+              sold: typeof date.tickets_sold === 'number' ? date.tickets_sold : undefined,
+              available: date.available,
+              price: product.product_price,
+              startDate: date.date,
+              status: 'loaded',
+              error: undefined,
+            },
+          }));
+        } else {
+          setEventDetails(prev => ({
+            ...prev,
+            [key]: {
+              ...prev[key],
+              status: 'error',
+              error: 'Missing WooCommerce event details',
+            },
+          }));
+        }
+      }
+    } catch (err) {
+      setEventDetails(prev => ({
+        ...prev,
+        [key]: {
+          ...prev[key],
+          status: 'error',
+          error: err instanceof ApiError ? err.message : 'Failed to refresh event',
+        },
+      }));
+    }
+  };
+
+  // 2. Add slot-level refresh for WooCommerce (refresh all dates for that slot)
+  const refreshWooCommerceSlot = async (event: SelectedEvent) => {
+    if (event.type !== 'woocommerce') return;
+    const currentData = getEventCurrentData(event);
+    // Fetch latest slot data from backend (always fresh)
+    const response = await api.refreshWooCommerce(currentData.currentProductId, currentData.currentSlotId);
+    const product = response.data.products[0];
+    const slot = product.slots.find(s => s.slot_id === currentData.currentSlotId);
+    if (!product || !slot) return;
+    // For each date in the slot, refresh the event details for that date
+    for (const date of slot.dates) {
+      const slotEvent: SelectedEvent = {
+        ...event,
+        details: {
+          ...event.details,
+          productId: product.product_id,
+          slotId: slot.slot_id,
+          dateId: date.date_id,
+        },
+        id: `${product.product_id}-${slot.slot_id}-${date.date_id}`,
+      };
+      // Use the same backend refresh logic
+      await refreshEventDetails(slotEvent);
+    }
+  };
+
+  // 3. Table-level refresh functions
+  const refreshAllDates = async () => {
+    for (const event of selectedEvents) {
+      await refreshEventDetails(event);
+    }
+  };
+  const refreshAllSlots = async () => {
+    for (const event of selectedEvents) {
+      if (event.type === 'woocommerce') {
+        await refreshWooCommerceSlot(event);
+      } else {
+        await refreshEventDetails(event);
+      }
+    }
+  };
+
+  const handleSyncInventory = async () => {
+    if (!totalCapacity || totalCapacity < 0) {
+      setSyncError('Total capacity must be a positive number');
+      return;
+    }
+
+    // Step 0: Calculate new available before confirmation
+    let totalSold = 0;
+    const eventsWithSold = selectedEvents.map(event => {
+      const key = `${event.type}-${event.id}`;
+      const details = eventDetails[key];
+      const sold = details?.sold ?? 0;
+      totalSold += sold;
+      return { ...event, sold };
+    });
+    if (totalCapacity < totalSold) {
+      setSyncError(`Error: Total capacity (${totalCapacity}) is less than total tickets sold (${totalSold})`);
+      setSyncLoading(false);
+      return;
+    }
+    const availableLeft = totalCapacity - totalSold;
+
+    // Confirmation dialog
+    const confirmMsg = `All events will be changed so that ${availableLeft} tickets are available for each. Are you sure you want to continue?`;
+    if (!window.confirm(confirmMsg)) {
+      return;
+    }
+
+    setSyncLoading(true);
+    setSyncError('');
+    const results: {success: boolean, message: string, event: SelectedEvent, changed?: boolean}[] = [];
+    try {
+      for (const event of eventsWithSold) {
+        const key = `${event.type}-${event.id}`;
+        const details = eventDetails[key];
+        let changed = false;
+        if (event.type === 'woocommerce') {
+          // Use the same logic as handleSetWooCommerce
+          const productId = details?.product?.product_id ?? event.details?.productId;
+          const slotId = details?.slot?.slot_id ?? event.details?.slotId;
+          const dateId = details?.date?.date_id ?? event.details?.dateId;
+          if (!productId || !slotId || !dateId) {
+            results.push({ success: false, message: `Missing WooCommerce IDs for ${event.name}`, event });
+            continue;
+          }
+          try {
+            const response = await api.setWooCommerceInventory(productId, slotId, dateId, availableLeft);
+            changed = (details?.available !== undefined && details.available !== availableLeft);
+            results.push({
+              success: response.success,
+              message: response.success 
+                ? `Set WooCommerce available for ${event.name} to ${availableLeft}`
+                : `Failed to set WooCommerce inventory: ${response.message || 'Unknown error'}`,
+              event,
+              changed
+            });
+          } catch (err) {
+            results.push({ success: false, message: `Error syncing ${event.name}: ${err instanceof Error ? err.message : 'Unknown error'}`, event });
+          }
+        } else if (event.type === 'eventbrite') {
+          // Use the same logic as handleSetEventbrite
+          const occurrenceId = details?.occurrence?.occurrence_id ?? event.details?.occurrence_id;
+          const ticketClassId = details?.ticketClass?.id ?? event.details?.ticket_class_id;
+          const sold = details?.sold ?? 0;
+          if (!occurrenceId || !ticketClassId) {
+            results.push({ success: false, message: `Missing Eventbrite IDs for ${event.name}`, event });
+            continue;
+          }
+          try {
+            const response = await api.setEventbriteCapacity(occurrenceId, ticketClassId, sold + availableLeft);
+            changed = (details?.available !== undefined && details.available !== availableLeft);
+            results.push({
+              success: response.success,
+              message: response.success 
+                ? `Set Eventbrite capacity for ${event.name} to ${sold + availableLeft}`
+                : `Failed to set Eventbrite capacity: ${response.message || 'Unknown error'}`,
+              event,
+              changed
+            });
+          } catch (err) {
+            results.push({ success: false, message: `Error syncing ${event.name}: ${err instanceof Error ? err.message : 'Unknown error'}`, event });
+          }
+        }
+      }
+      // Step 5: Refresh data after all updates
+      // Refresh all WooCommerce events using the always-fresh endpoint
+      for (const event of selectedEvents) {
+        if (event.type === 'woocommerce') {
+          await refreshEventDetails(event);
+        }
+      }
+      // Refresh all Eventbrite events as well (optional, for consistency)
+      for (const event of selectedEvents) {
+        if (event.type === 'eventbrite') {
+          await refreshEventDetails(event);
+        }
+      }
+      // Display results summary
+      const successCount = results.filter(r => r.success).length;
+      const changedCount = results.filter(r => r.changed).length;
+      if (successCount === results.length && changedCount > 0) {
+        setSyncSuccess(true);
+        setSyncError('');
+      } else if (successCount > 0 && changedCount > 0) {
+        setSyncSuccess(true);
+        setSyncError(results.filter(r => !r.success).map(r => r.message).join('. '));
+      } else if (changedCount === 0) {
+        setSyncSuccess(false);
+        setSyncError('No changes were made. All events already had the target quantity.');
+      } else {
+        setSyncSuccess(false);
+        setSyncError(`Failed to sync any events. ${results.map(r => r.message).join('. ')}`);
+      }
+    } catch (err) {
+      setSyncSuccess(false);
+      setSyncError(`Error syncing inventory: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  // Add helper function to get Eventbrite ticket class ID from event details
+  const getEventbriteTicketClassId = (event: SelectedEvent): string | null => {
+    if (event.type !== 'eventbrite') return null;
+    
+    // First check event.details
+    if (event.details?.ticket_class_id) return event.details.ticket_class_id;
+    
+    // Then try to find from occurrence in data state
+    const { seriesId, occurrenceId } = parseEventbriteId(event.id);
+    const series = dataState.eventbriteSeries.find(s => s.series_id === seriesId);
+    if (!series) return null;
+    
+    const occurrence = series.events.find(e => e.occurrence_id === occurrenceId);
+    if (!occurrence) return null;
+    
+    // Get first ticket class from the event details we loaded earlier
+    const key = `eventbrite-${event.id}`;
+    const details = eventDetails[key];
+    if (details?.ticketClass?.id) return details.ticketClass.id;
+    
+    return null;
+  };
+
+  // Add this helper for a spinner
+  const Spinner: React.FC<{size?: 'tiny' | 'small' | 'medium'}> = ({ size = 'small' }) => (
+    <span className={`spinner spinner-${size}`}></span>
+  );
 
   if (dataState.loading) {
     return (
@@ -730,6 +1166,29 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
 
   return (
     <div className="comparison-view">
+      {/* Sync Inventory Controls (cross-service) */}
+      <div className="sync-inventory-bar">
+        <label htmlFor="total-capacity-input">Total Capacity:</label>
+        <input
+          id="total-capacity-input"
+          type="number"
+          min={0}
+          value={totalCapacity}
+          onChange={e => setTotalCapacity(Number(e.target.value))}
+          disabled={syncLoading}
+          className="total-capacity-input"
+        />
+        <button
+          className="btn btn-primary sync-inventory-btn"
+          onClick={handleSyncInventory}
+          disabled={syncLoading || selectedEvents.length < 2}
+          title={selectedEvents.length < 2 ? 'Select at least 2 events to sync' : 'Sync inventory across all compared events'}
+        >
+          {syncLoading ? <><Spinner size="tiny" /> Syncing...</> : 'Sync Inventory'}
+        </button>
+        {syncError && <span className="sync-error">{syncError}</span>}
+        {syncSuccess && <span className="sync-success">Inventory synced!</span>}
+      </div>
       {/* Compact Header */}
       <div className="comparison-header">
         <div className="header-info">
@@ -826,18 +1285,22 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                             <span className="platform-name">
                               {event.type === 'eventbrite' ? 'EB' : 'WC'}
                             </span>
+                            {details.status === 'loading' && <Spinner size="tiny" />}
                           </div>
                         </td>
 
                         {/* Event Name (Dropdown) */}
                         <td className="col-name">
                           {event.type === 'eventbrite' ? (
-                            <select 
+                            <select
                               className="event-dropdown"
                               value={currentData.currentSeriesId || ''}
                               onChange={(e) => {
-                                if (e.target.value && currentData.currentOccurrenceId) {
-                                  handleEventbriteChange(event, e.target.value, currentData.currentOccurrenceId);
+                                const newSeriesId = e.target.value;
+                                const series = dataState.eventbriteSeries.find(s => s.series_id === newSeriesId);
+                                const firstOccurrence = series?.events[0]?.occurrence_id;
+                                if (newSeriesId && firstOccurrence) {
+                                  handleEventbriteChange(event, newSeriesId, firstOccurrence);
                                 }
                               }}
                             >
@@ -848,12 +1311,16 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                               ))}
                             </select>
                           ) : (
-                            <select 
+                            <select
                               className="event-dropdown"
                               value={currentData.currentProductId || ''}
                               onChange={(e) => {
-                                if (e.target.value && currentData.currentSlotId && currentData.currentDateId) {
-                                  handleWooCommerceChange(event, parseInt(e.target.value), currentData.currentSlotId, currentData.currentDateId);
+                                const newProductId = parseInt(e.target.value);
+                                const product = dataState.woocommerceProducts.find(p => p.product_id === newProductId);
+                                const firstSlot = product?.slots[0]?.slot_id;
+                                const firstDate = product?.slots[0]?.dates[0]?.date_id;
+                                if (newProductId && firstSlot && firstDate) {
+                                  handleWooCommerceChange(event, newProductId, firstSlot, firstDate);
                                 }
                               }}
                             >
@@ -864,11 +1331,8 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                               ))}
                             </select>
                           )}
-                          
                           {details.status === 'loading' && (
-                            <div className="loading-indicator">
-                              <div className="spinner-tiny"></div>
-                            </div>
+                            <span className="inline-spinner"><Spinner size="tiny" /></span>
                           )}
                           {details.status === 'error' && (
                             <span className="error-indicator" title={details.error}>⚠️</span>
@@ -881,12 +1345,15 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                             (() => {
                               const product = dataState.woocommerceProducts.find(p => p.product_id === currentData.currentProductId);
                               return product ? (
-                                <select 
+                                <select
                                   className="slot-dropdown"
                                   value={currentData.currentSlotId || ''}
                                   onChange={(e) => {
-                                    if (e.target.value && currentData.currentDateId) {
-                                      handleWooCommerceChange(event, currentData.currentProductId, e.target.value, currentData.currentDateId);
+                                    const newSlotId = e.target.value;
+                                    const slot = product.slots.find(s => s.slot_id === newSlotId);
+                                    const firstDate = slot?.dates[0]?.date_id;
+                                    if (currentData.currentProductId && newSlotId && firstDate) {
+                                      handleWooCommerceChange(event, currentData.currentProductId, newSlotId, firstDate);
                                     }
                                   }}
                                 >
@@ -911,7 +1378,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                             (() => {
                               const series = dataState.eventbriteSeries.find(s => s.series_id === currentData.currentSeriesId);
                               return series ? (
-                                <select 
+                                <select
                                   className="date-dropdown"
                                   value={currentData.currentOccurrenceId || ''}
                                   onChange={(e) => {
@@ -937,7 +1404,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                               const product = dataState.woocommerceProducts.find(p => p.product_id === currentData.currentProductId);
                               const slot = product?.slots.find(s => s.slot_id === currentData.currentSlotId);
                               return slot ? (
-                                <select 
+                                <select
                                   className="date-dropdown"
                                   value={currentData.currentDateId || ''}
                                   onChange={(e) => {
@@ -1055,6 +1522,37 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                           ) : (
                             <span className="no-controls">-</span>
                           )}
+                          {details.type === 'woocommerce' && (
+                            <input
+                              type="number"
+                              value={setInputs[key] || ''}
+                              onChange={(e) => setSetInputs(prev => ({ ...prev, [key]: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleSetWooCommerce(key, event, details);
+                                }
+                              }}
+                              disabled={details.inventoryLoading}
+                              className="set-input"
+                            />
+                          )}
+                          {details.type === 'eventbrite' && (
+                            <input
+                              type="number"
+                              value={setInputs[key] || ''}
+                              onChange={(e) => setSetInputs(prev => ({ ...prev, [key]: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleSetEventbrite(key, details);
+                                }
+                              }}
+                              disabled={details.capacityLoading}
+                              className="set-input"
+                            />
+                          )}
+                          {setErrors[key] && (
+                            <span className="error-message">{setErrors[key]}</span>
+                          )}
                         </td>
 
                         {/* Actions */}
@@ -1070,6 +1568,22 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                               >
                                 👁️
                               </a>
+                            )}
+                            <button 
+                              className="btn-action btn-refresh-date"
+                              onClick={() => refreshEventDetails(event)}
+                              title="Refresh just this date"
+                            >
+                              🔄 Date
+                            </button>
+                            {event.type === 'woocommerce' && (
+                              <button
+                                className="btn-action btn-refresh-slot"
+                                onClick={() => refreshWooCommerceSlot(event)}
+                                title="Refresh all dates for this slot"
+                              >
+                                🔄 Slot
+                              </button>
                             )}
                             <button 
                               className="btn-action btn-remove"

@@ -12,7 +12,7 @@ const WooCommerceViewer: React.FC<WooCommerceViewerProps> = ({ onDateSelect, ini
   const [productsData, setProductsData] = useState<WooCommerceProductsData | null>(null);
   const [cacheInfo, setCacheInfo] = useState<WooCommerceCacheInfo | null>(null);
   const [loading, setLoading] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(initialCollapsed);
   const [expandedProducts, setExpandedProducts] = useState<Set<number>>(new Set());
@@ -20,18 +20,17 @@ const WooCommerceViewer: React.FC<WooCommerceViewerProps> = ({ onDateSelect, ini
 
   // Load products data
   const loadProducts = async (useCache: boolean = true) => {
+    setRefreshing(true);
+    let response;
     if (useCache) {
-      setLoading(true);
+      response = await api.getWooCommerceProducts();
     } else {
-      setSyncing(true);
+      response = await api.refreshWooCommerceProducts();
     }
+    setRefreshing(false);
     setError(null);
 
     try {
-      const response = useCache 
-        ? await api.getWooCommerceProducts()
-        : await api.syncWooCommerceProducts();
-      
       setProductsData(response.data);
       
       // Load cache info
@@ -43,7 +42,6 @@ const WooCommerceViewer: React.FC<WooCommerceViewerProps> = ({ onDateSelect, ini
       setError(errorMessage);
     } finally {
       setLoading(false);
-      setSyncing(false);
     }
   };
 
@@ -167,12 +165,12 @@ const WooCommerceViewer: React.FC<WooCommerceViewerProps> = ({ onDateSelect, ini
         {!isCollapsed && (
           <div className="woocommerce-controls">
             <button
-              className="sync-button"
+              className="refresh-button"
               onClick={() => loadProducts(false)}
-              disabled={syncing || loading}
+              disabled={refreshing || loading}
               title="Refresh from WooCommerce API"
             >
-              {syncing ? '🔄 Syncing...' : '🔄 Sync'}
+              {refreshing ? '🔄 Refreshing...' : '🔄 Refresh'}
             </button>
           </div>
         )}

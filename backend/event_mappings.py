@@ -36,8 +36,7 @@ class EventMappingManager:
     
     def _get_manual_fallback_mappings(self) -> List[EventMapping]:
         """
-        Manual fallback mappings based on event title analysis
-        These are the baseline mappings that always exist
+        Manual fallback mappings for weekly regular shows only.
         """
         mappings = [
             # Weekly Regular Shows - Multi-slot mappings
@@ -328,24 +327,31 @@ class EventMappingManager:
     def get_all_mappings(self, woocommerce_products: List[Dict] = None, eventbrite_series: List[Dict] = None) -> List[EventMapping]:
         """Get all mappings in priority order: user overrides → manual fallback → programmatic"""
         all_mappings = []
-        
+
         # Start with user overrides
         all_mappings.extend(self.user_overrides.values())
-        
-        # Add manual fallback mappings (if not overridden)
+
+        # Prepare sets for fast lookup
+        product_ids = set(str(p['product_id']) for p in woocommerce_products) if woocommerce_products else set()
+        series_ids = set(str(s['series_id']) for s in eventbrite_series) if eventbrite_series else set()
+
+        # Add manual fallback mappings (if not overridden and if all products/series exist)
         for manual_mapping in self.manual_mappings:
             if manual_mapping.id not in self.user_overrides:
-                all_mappings.append(manual_mapping)
-        
+                # Only include if product exists and all series exist
+                if (not product_ids or manual_mapping.woocommerce_product_id in product_ids) and \
+                   (not series_ids or all(sid in series_ids for sid in manual_mapping.eventbrite_series_ids)):
+                    all_mappings.append(manual_mapping)
+
         # Add programmatic mappings (if data provided and not already mapped)
         if woocommerce_products and eventbrite_series:
             programmatic = self.get_programmatic_mappings(woocommerce_products, eventbrite_series)
             mapped_product_ids = {m.woocommerce_product_id for m in all_mappings}
-            
+
             for prog_mapping in programmatic:
                 if prog_mapping.woocommerce_product_id not in mapped_product_ids:
                     all_mappings.append(prog_mapping)
-        
+
         return all_mappings
     
     def get_unmapped_events(self, woocommerce_products: List[Dict], eventbrite_series: List[Dict]) -> List[UnmappedEvent]:

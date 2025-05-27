@@ -43,6 +43,18 @@ function App() {
     });
   };
 
+  // Replace an event in the selectedEvents array
+  const replaceSelectedEvent = (oldEvent: SelectedEvent, newEvent: SelectedEvent) => {
+    setSelectedEvents(prev => {
+      const idx = prev.findIndex(e => e.type === oldEvent.type && e.id === oldEvent.id);
+      if (idx === -1) return prev;
+      // Replace at idx
+      const updated = [...prev];
+      updated[idx] = newEvent;
+      return updated;
+    });
+  };
+
   // Clear all selections
   const handleClearSelections = () => {
     setSelectedEvents([]);
@@ -146,6 +158,7 @@ function App() {
             selectedEvents={selectedEvents}
             onEventSelect={handleEventSelect}
             onClearSelections={handleClearSelections}
+            replaceSelectedEvent={replaceSelectedEvent}
           />
         );
       case 'mapping':
