@@ -161,14 +161,15 @@ class WordPressDBClient:
             logging.error(f"Error querying total tickets sold: {e}")
             raise WordPressDBError(f"Failed to query total tickets sold: {str(e)}")
     
-    def get_product_total_capacity(self, product_id: int, slot_name: str) -> Optional[int]:
+    def get_product_total_capacity(self, product_id: int, slot_name: str, booking_date: str = None) -> Optional[int]:
         """
         Get the original total capacity for a product/slot from FooEvents booking configuration.
-        For sold-out shows, calculates capacity as tickets_sold + current_stock.
+        Calculates capacity as available_stock + tickets_sold for the specific date.
         
         Args:
             product_id: WooCommerce product ID
             slot_name: FooEvents booking slot name
+            booking_date: Specific booking date (e.g., "May 28, 2025")
             
         Returns:
             Total capacity, or None if not found/error
@@ -194,67 +195,83 @@ class WordPressDBClient:
                     try:
                         booking_data = json.loads(result['meta_value'])
                         
-                        # Find the slot and get the stock value
+                        # Find the slot and get the stock value for the specific date
                         for slot_id, slot_info in booking_data.items():
                             if slot_info.get('label') == slot_name:
                                 current_stock = 0
+                                target_date = booking_date
                                 
                                 # Handle nested add_date structure (Format 1)
                                 add_date = slot_info.get('add_date', {})
                                 if isinstance(add_date, dict) and add_date:
-                                    for date_id, date_info in add_date.items():
-                                        if isinstance(date_info, dict):
-                                            stock = date_info.get('stock', 0)
-                                            try:
-                                                stock_int = int(stock) if stock != '' else 0
-                                                current_stock = max(current_stock, stock_int)
-                                            except (ValueError, TypeError):
-                                                continue
+                                    if booking_date:
+                                        # Look for the specific date
+                                        for date_id, date_info in add_date.items():
+                                            if isinstance(date_info, dict) and date_info.get('date') == booking_date:
+                                                stock = date_info.get('stock', 0)
+                                                try:
+                                                    current_stock = int(stock) if stock != '' else 0
+                                                    target_date = date_info.get('date')
+                                                    break
+                                                except (ValueError, TypeError):
+                                                    continue
+                                    else:
+                                        # No specific date requested, use the first date found
+                                        for date_id, date_info in add_date.items():
+                                            if isinstance(date_info, dict):
+                                                stock = date_info.get('stock', 0)
+                                                try:
+                                                    current_stock = int(stock) if stock != '' else 0
+                                                    target_date = date_info.get('date')
+                                                    break
+                                                except (ValueError, TypeError):
+                                                    continue
                                 else:
                                     # Handle flat structure with {id}_stock fields (Format 2)
-                                    for key, value in slot_info.items():
-                                        if key.endswith('_stock'):
-                                            try:
-                                                stock_int = int(value) if value != '' else 0
-                                                current_stock = max(current_stock, stock_int)
-                                            except (ValueError, TypeError):
-                                                continue
+                                    if booking_date:
+                                        # Look for the specific date
+                                        for key, value in slot_info.items():
+                                            if key.endswith('_add_date') and value == booking_date:
+                                                date_id = key.replace('_add_date', '')
+                                                stock_key = f'{date_id}_stock'
+                                                if stock_key in slot_info:
+                                                    try:
+                                                        current_stock = int(slot_info[stock_key]) if slot_info[stock_key] != '' else 0
+                                                        target_date = value
+                                                        break
+                                                    except (ValueError, TypeError):
+                                                        continue
+                                    else:
+                                        # No specific date requested, use the first stock found
+                                        for key, value in slot_info.items():
+                                            if key.endswith('_stock'):
+                                                try:
+                                                    current_stock = int(value) if value != '' else 0
+                                                    # Find corresponding date
+                                                    date_id = key.replace('_stock', '')
+                                                    date_key = f'{date_id}_add_date'
+                                                    target_date = slot_info.get(date_key, booking_date)
+                                                    break
+                                                except (ValueError, TypeError):
+                                                    continue
                                 
-                                # If we found stock data for this slot
-                                if current_stock > 0:
-                                    logging.info(f"Found capacity {current_stock} for product {product_id}, slot '{slot_name}'")
-                                    return current_stock
-                                else:
-                                    # For sold-out shows (stock = 0), calculate original capacity
-                                    # by adding current stock (0) + tickets sold
+                                # Calculate total capacity = available stock + tickets sold for the target date
+                                if target_date:
                                     try:
-                                        # Get tickets sold for this slot (we need a date, so get any date for this slot)
-                                        booking_date = None
-                                        if isinstance(add_date, dict) and add_date:
-                                            # Nested format
-                                            for date_id, date_info in add_date.items():
-                                                if isinstance(date_info, dict):
-                                                    booking_date = date_info.get('date')
-                                                    break
+                                        tickets_sold = self.get_tickets_sold_for_date(product_id, slot_name, target_date)
+                                        if tickets_sold is not None:
+                                            total_capacity = current_stock + tickets_sold
+                                            logging.info(f"Calculated total capacity {total_capacity} for product {product_id}, slot '{slot_name}', date '{target_date}' (available: {current_stock}, sold: {tickets_sold})")
+                                            return total_capacity
                                         else:
-                                            # Flat format
-                                            for key, value in slot_info.items():
-                                                if key.endswith('_add_date'):
-                                                    booking_date = value
-                                                    break
-                                        
-                                        if booking_date:
-                                            tickets_sold = self.get_tickets_sold_for_date(product_id, slot_name, booking_date)
-                                            if tickets_sold is not None and tickets_sold > 0:
-                                                total_capacity = current_stock + tickets_sold
-                                                logging.info(f"Calculated capacity {total_capacity} for sold-out product {product_id}, slot '{slot_name}' (stock: {current_stock}, sold: {tickets_sold})")
-                                                return total_capacity
+                                            logging.error(f"Could not get tickets sold for product {product_id}, slot '{slot_name}', date '{target_date}'")
+                                            return None
                                     except Exception as e:
-                                        logging.error(f"Error calculating sold-out capacity: {e}")
-                                
-                                # If we still don't have capacity, return None
-                                logging.warning(f"Could not determine capacity for product {product_id}, slot '{slot_name}'")
-                                return None
+                                        logging.error(f"Error calculating total capacity: {e}")
+                                        return None
+                                else:
+                                    logging.error(f"Could not find booking date for product {product_id}, slot '{slot_name}'")
+                                    return None
                         
                         # If we can't find the specific slot, return None
                         logging.warning(f"Could not find slot '{slot_name}' for product {product_id}")

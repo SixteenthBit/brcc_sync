@@ -4,13 +4,13 @@ import type { EventSeries, EventOccurrence, CacheInfo } from '../api';
 import './SeriesViewer.css';
 
 interface SeriesViewerProps {
-  onOccurrenceSelect: (eventId: string) => void;
+  onOccurrenceSelect: (eventId: string, occurrence?: any) => void;
   initialCollapsed?: boolean;
 }
 
 const SeriesViewer: React.FC<SeriesViewerProps> = ({ onOccurrenceSelect, initialCollapsed = false }) => {
   const [series, setSeries] = useState<EventSeries[]>([]);
-  const [selectedSeries, setSelectedSeries] = useState<EventSeries | null>(null);
+  const [, setSelectedSeries] = useState<EventSeries | null>(null);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,8 +116,12 @@ const SeriesViewer: React.FC<SeriesViewerProps> = ({ onOccurrenceSelect, initial
   };
 
   // Handle occurrence selection
-  const handleOccurrenceClick = (occurrence: EventOccurrence) => {
-    onOccurrenceSelect(occurrence.occurrence_id);
+  const handleOccurrenceClick = (occurrence: EventOccurrence, seriesItem: any) => {
+    const occurrenceWithSeries = {
+      ...occurrence,
+      series_name: seriesItem.series_name
+    };
+    onOccurrenceSelect(occurrence.occurrence_id, occurrenceWithSeries);
     // Scroll to capacity manager section
     const capacitySection = document.querySelector('.capacity-manager');
     if (capacitySection) {
@@ -296,7 +300,7 @@ const SeriesViewer: React.FC<SeriesViewerProps> = ({ onOccurrenceSelect, initial
                                 className="occurrence-card"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleOccurrenceClick(occurrence);
+                                  handleOccurrenceClick(occurrence, seriesItem);
                                 }}
                               >
                                 <div className="occurrence-date">

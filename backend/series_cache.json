@@ -4,13 +4,8 @@
     {
       "series_id": "969715062857",
       "series_name": "Feedback | An Open Mic Comedy Show @ Backroom Comedy Club",
-      "event_count": 14,
+      "event_count": 13,
       "events": [
-        {
-          "occurrence_id": "1219650219639",
-          "start_date": "2025-05-26T22:00:00",
-          "url": "https://www.eventbrite.ca/e/feedback-an-open-mic-comedy-show-backroom-comedy-club-tickets-1219650219639"
-        },
         {
           "occurrence_id": "1219650229669",
           "start_date": "2025-06-02T22:00:00",
@@ -2105,7 +2100,7 @@
     }
   ],
   "total_series_count": 21,
-  "total_events_on_sale": 391,
-  "last_updated": "2025-05-27T01:18:05.714722+00:00",
+  "total_events_on_sale": 390,
+  "last_updated": "2025-05-27T09:05:59.263720+00:00",
   "cache_source": "api"
 }

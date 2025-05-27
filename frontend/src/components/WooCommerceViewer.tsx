@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { api, ApiError } from '../api';
-import type { WooCommerceProductsData, WooCommerceCacheInfo, WooCommerceProduct, WooCommerceSlot, WooCommerceDate } from '../api';
+import type { WooCommerceProductsData, WooCommerceCacheInfo } from '../api';
 import './WooCommerceViewer.css';
 
 interface WooCommerceViewerProps {
-  onDateSelect?: (productId: number, slotId: string, dateId: string) => void;
+  onDateSelect?: (productId: number, slotId: string, dateId: string, eventData?: any) => void;
   initialCollapsed?: boolean;
 }
 
@@ -77,9 +77,18 @@ const WooCommerceViewer: React.FC<WooCommerceViewerProps> = ({ onDateSelect, ini
   };
 
   // Handle date selection
-  const handleDateSelect = (productId: number, slotId: string, dateId: string) => {
+  const handleDateSelect = (productId: number, slotId: string, dateId: string, product: any, slot: any, date: any) => {
     if (onDateSelect) {
-      onDateSelect(productId, slotId, dateId);
+      const eventData = {
+        productName: product.product_name,
+        slotLabel: slot.slot_label,
+        date: date.date,
+        price: product.product_price,
+        capacity: typeof date.total_capacity === 'number' ? date.total_capacity : undefined,
+        sold: typeof date.tickets_sold === 'number' ? date.tickets_sold : undefined,
+        available: date.available
+      };
+      onDateSelect(productId, slotId, dateId, eventData);
     }
   };
 
@@ -310,7 +319,7 @@ const WooCommerceViewer: React.FC<WooCommerceViewerProps> = ({ onDateSelect, ini
                                     <div 
                                       key={date.date_id} 
                                       className={`date-card ${date.available === 0 ? 'sold-out' : ''}`}
-                                      onClick={() => handleDateSelect(product.product_id, slot.slot_id, date.date_id)}
+                                      onClick={() => handleDateSelect(product.product_id, slot.slot_id, date.date_id, product, slot, date)}
                                     >
                                       <div className="date-info">
                                         <span className="date-text">{date.date}</span>

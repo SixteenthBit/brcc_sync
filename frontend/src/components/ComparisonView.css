@@ -1,0 +1,750 @@
+/* Comparison View Container */
+.comparison-view {
+  padding: 24px;
+  max-width: 1800px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+/* Compact Header */
+.comparison-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 24px;
+}
+
+.header-info h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.header-info p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Full Width Container */
+.comparison-container-full {
+  width: 100%;
+}
+
+/* Comparison Table Panel */
+.comparison-table-panel {
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Summary Bar */
+.summary-bar {
+  padding: 16px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e1e5e9;
+}
+
+.summary-stats {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+}
+
+.summary-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.summary-stat .stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1;
+}
+
+.summary-stat .stat-label {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+/* Comparison Table */
+.comparison-table-wrapper {
+  overflow-x: auto;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.comparison-table th {
+  background: #f8fafc;
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e1e5e9;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.comparison-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.event-row:hover {
+  background: #fafbfc;
+}
+
+.event-row-eventbrite {
+  border-left: 3px solid #f59e0b;
+}
+
+.event-row-woocommerce {
+  border-left: 3px solid #10b981;
+}
+
+/* Add Event Row */
+.add-event-row {
+  background: #f8fafc;
+  border-top: 2px solid #e1e5e9;
+}
+
+.add-event-row:hover {
+  background: #f1f5f9;
+}
+
+.add-event-row.disabled {
+  background: #f1f5f9;
+  opacity: 0.7;
+}
+
+.add-event-row.disabled:hover {
+  background: #f1f5f9;
+}
+
+.max-reached {
+  font-size: 11px;
+  color: #dc2626;
+  font-weight: 600;
+  text-align: center;
+  display: block;
+  padding: 2px 4px;
+}
+
+.max-message {
+  font-size: 12px;
+  color: #dc2626;
+  font-style: italic;
+  text-align: center;
+  display: block;
+  padding: 4px 8px;
+}
+
+/* Column Sizing */
+.col-platform { width: 80px; }
+.col-name { width: 200px; min-width: 200px; }
+.col-slot { width: 120px; }
+.col-date { width: 140px; }
+.col-capacity { width: 80px; text-align: center; }
+.col-sold { width: 80px; text-align: center; }
+.col-available { width: 80px; text-align: center; }
+.col-percentage { width: 100px; }
+.col-price { width: 80px; text-align: center; }
+.col-controls { width: 80px; text-align: center; }
+.col-actions { width: 80px; text-align: center; }
+
+/* Platform Badge */
+.platform-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.event-row-eventbrite .platform-badge {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.event-row-woocommerce .platform-badge {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.platform-badge .platform-icon {
+  font-size: 12px;
+}
+
+/* Dropdown Styles */
+.platform-select,
+.event-dropdown,
+.slot-dropdown,
+.date-dropdown {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  max-width: 100%;
+}
+
+.platform-select {
+  max-width: 70px;
+  font-size: 11px;
+}
+
+.event-dropdown {
+  max-width: 190px;
+}
+
+.slot-dropdown {
+  max-width: 110px;
+}
+
+.date-dropdown {
+  max-width: 130px;
+}
+
+.platform-select:hover,
+.event-dropdown:hover,
+.slot-dropdown:hover,
+.date-dropdown:hover {
+  border-color: #2563eb;
+}
+
+.platform-select:focus,
+.event-dropdown:focus,
+.slot-dropdown:focus,
+.date-dropdown:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+/* Event Name Cell */
+.event-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.event-name {
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.3;
+}
+
+.loading-indicator,
+.error-indicator {
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.error-indicator {
+  cursor: help;
+  font-size: 14px;
+}
+
+/* Progress Bar for Percentage */
+.percentage-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.progress-low { background: #10b981; }
+.progress-medium { background: #f59e0b; }
+.progress-high { background: #ef4444; }
+.progress-critical { background: #dc2626; }
+
+.percentage-text {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+  min-width: 30px;
+}
+
+/* Compact Capacity Controls */
+.capacity-controls-compact {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-capacity-compact {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-capacity-compact:hover:not(:disabled) {
+  border-color: #2563eb;
+  background: #f8fafc;
+}
+
+.btn-capacity-compact:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-increment {
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+.btn-increment:hover:not(:disabled) {
+  background: #ecfdf5;
+  border-color: #059669;
+}
+
+.btn-decrement {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.btn-decrement:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #dc2626;
+}
+
+.no-controls {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+/* Inventory Controls (for WooCommerce) */
+.inventory-controls-compact {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-inventory-compact {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-inventory-compact:hover:not(:disabled) {
+  border-color: #2563eb;
+  background: #f8fafc;
+}
+
+.btn-inventory-compact:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-inventory-compact.btn-increment {
+  color: #d97706;
+  border-color: #fed7aa;
+}
+
+.btn-inventory-compact.btn-increment:hover:not(:disabled) {
+  background: #fff7ed;
+  border-color: #d97706;
+}
+
+.btn-inventory-compact.btn-decrement {
+  color: #6366f1;
+  border-color: #c7d2fe;
+}
+
+.btn-inventory-compact.btn-decrement:hover:not(:disabled) {
+  background: #f0f4ff;
+  border-color: #6366f1;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-action {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.btn-action:hover {
+  border-color: #2563eb;
+  background: #f8fafc;
+}
+
+.btn-view {
+  color: #2563eb;
+}
+
+.btn-remove {
+  color: #dc2626;
+}
+
+.btn-add {
+  color: #059669;
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.btn-add:hover:not(:disabled) {
+  background: #d1fae5;
+  border-color: #059669;
+}
+
+.btn-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: white;
+  color: #9ca3af;
+  border-color: #d1d5db;
+}
+
+/* Capacity Errors Panel */
+.capacity-errors-panel {
+  padding: 16px 20px;
+  border-top: 1px solid #e1e5e9;
+  background: #fef2f2;
+}
+
+.capacity-errors-panel h4 {
+  font-size: 14px;
+  color: #dc2626;
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+.capacity-error {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #fecaca;
+  font-size: 12px;
+}
+
+.capacity-error:last-child {
+  border-bottom: none;
+}
+
+.error-event {
+  font-weight: 500;
+  color: #374151;
+  min-width: 150px;
+}
+
+.error-message {
+  color: #dc2626;
+  flex: 1;
+}
+
+/* Utility Classes */
+.unavailable {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.capacity-value,
+.sold-value,
+.available-value {
+  font-weight: 500;
+  color: #374151;
+}
+
+.price-value {
+  color: #059669;
+  font-weight: 500;
+}
+
+/* Spinners */
+.spinner-tiny {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #f3f4f6;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f4f6;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Loading and Error States */
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.error-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px;
+  color: #dc2626;
+  font-size: 14px;
+}
+
+.error-icon {
+  font-size: 16px;
+}
+
+/* Button Styles */
+.btn {
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-outline {
+  border-color: #d1d5db;
+  color: #374151;
+  background: white;
+}
+
+.btn-outline:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #f8fafc;
+}
+
+.btn-secondary {
+  background: #6b7280;
+  color: white;
+  border-color: #6b7280;
+}
+
+.btn-secondary:hover {
+  background: #4b5563;
+  border-color: #4b5563;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+  .col-name { 
+    width: 180px; 
+    min-width: 180px; 
+  }
+  
+  .event-dropdown {
+    max-width: 170px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .summary-stats {
+    gap: 20px;
+  }
+  
+  .col-name { 
+    width: 160px; 
+    min-width: 160px; 
+  }
+  
+  .event-dropdown {
+    max-width: 150px;
+  }
+  
+  .slot-dropdown {
+    max-width: 100px;
+  }
+  
+  .date-dropdown {
+    max-width: 120px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .comparison-view {
+    padding: 16px;
+  }
+  
+  .comparison-table {
+    font-size: 12px;
+  }
+  
+  .comparison-table th,
+  .comparison-table td {
+    padding: 8px 4px;
+  }
+  
+  .col-name { 
+    width: 140px; 
+    min-width: 140px; 
+  }
+  
+  .event-dropdown {
+    max-width: 130px;
+  }
+  
+  .summary-stats {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .comparison-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .header-actions {
+    justify-content: space-between;
+  }
+  
+  .comparison-table-wrapper {
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .comparison-table {
+    min-width: 1000px;
+  }
+  
+  .summary-stats {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .comparison-view {
+    padding: 12px;
+  }
+  
+  .header-info h1 {
+    font-size: 24px;
+  }
+  
+  .comparison-table {
+    font-size: 11px;
+    min-width: 900px;
+  }
+  
+  .btn-action {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+  
+  .btn-capacity-compact {
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+  }
+  
+  .platform-select,
+  .event-dropdown,
+  .slot-dropdown,
+  .date-dropdown {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+} 

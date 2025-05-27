@@ -165,10 +165,88 @@ export interface WooCommerceCacheInfoResponse {
   data: WooCommerceCacheInfo;
 }
 
+// Event Mapping interfaces
+export interface EventMapping {
+  id: string;
+  name: string;
+  woocommerce_product_id: string;
+  eventbrite_series_ids: string[];
+  mapping_source: 'manual_fallback' | 'programmatic' | 'user_override';
+  is_active: boolean;
+  last_updated: string;
+}
+
+export interface UnmappedEvent {
+  id: string;
+  platform: 'woocommerce' | 'eventbrite';
+  name: string;
+  product_id?: string;
+  series_id?: string;
+  reason: 'no_match_found' | 'event_removed' | 'user_unmapped';
+}
+
+export interface MappingSummary {
+  total_mappings: number;
+  manual_fallback_count: number;
+  programmatic_count: number;
+  user_override_count: number;
+  total_unmapped: number;
+  unmapped_woocommerce: number;
+  unmapped_eventbrite: number;
+}
+
+export interface MappingsData {
+  mappings: EventMapping[];
+  unmapped_events: UnmappedEvent[];
+  summary: MappingSummary;
+}
+
+export interface MappingsResponse {
+  success: boolean;
+  message: string;
+  data: MappingsData;
+}
+
+export interface MappingResponse {
+  success: boolean;
+  message: string;
+  data: EventMapping;
+}
+
+export interface CreateMappingRequest {
+  woocommerce_product_id: string;
+  eventbrite_series_ids: string[];
+  name: string;
+}
+
+export interface UpdateMappingRequest {
+  name?: string;
+  woocommerce_product_id?: string;
+  eventbrite_series_ids?: string[];
+  is_active?: boolean;
+}
+
+export interface ComparisonGroupData {
+  mapping_id: string;
+  mapping_name: string;
+  woocommerce_product: any;
+  eventbrite_series: any[];
+  comparison_ready: boolean;
+}
+
+export interface ComparisonGroupResponse {
+  success: boolean;
+  message: string;
+  data: ComparisonGroupData;
+}
+
 class ApiError extends Error {
-  constructor(message: string, public status?: number) {
+  public status?: number;
+  
+  constructor(message: string, status?: number) {
     super(message);
     this.name = 'ApiError';
+    this.status = status;
   }
 }
 
@@ -300,6 +378,72 @@ export const api = {
   // Get WordPress database status
   async getWordPressDBStatus(): Promise<any> {
     return makeRequest<any>('/woocommerce/wordpress-db-status');
+  },
+
+  // Increment WooCommerce inventory
+  async incrementWooCommerceInventory(productId: number, slotId?: string, dateId?: string): Promise<CapacityUpdateResponse> {
+    return makeRequest<CapacityUpdateResponse>('/woocommerce/inventory/increment', {
+      method: 'POST',
+      body: JSON.stringify({
+        product_id: productId,
+        slot_id: slotId,
+        date_id: dateId,
+      }),
+    });
+  },
+
+  // Decrement WooCommerce inventory
+  async decrementWooCommerceInventory(productId: number, slotId?: string, dateId?: string): Promise<CapacityUpdateResponse> {
+    return makeRequest<CapacityUpdateResponse>('/woocommerce/inventory/decrement', {
+      method: 'POST',
+      body: JSON.stringify({
+        product_id: productId,
+        slot_id: slotId,
+        date_id: dateId,
+      }),
+    });
+  },
+
+  // Event Mapping methods
+
+  // Get all mappings and unmapped events
+  async getMappings(): Promise<MappingsResponse> {
+    return makeRequest<MappingsResponse>('/mappings');
+  },
+
+  // Get specific mapping by ID
+  async getMapping(mappingId: string): Promise<MappingResponse> {
+    return makeRequest<MappingResponse>(`/mappings/${mappingId}`);
+  },
+
+  // Create new user mapping
+  async createMapping(request: CreateMappingRequest): Promise<MappingResponse> {
+    return makeRequest<MappingResponse>('/mappings', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  },
+
+  // Update existing mapping
+  async updateMapping(mappingId: string, request: UpdateMappingRequest): Promise<MappingResponse> {
+    return makeRequest<MappingResponse>(`/mappings/${mappingId}`, {
+      method: 'PUT',
+      body: JSON.stringify(request),
+    });
+  },
+
+  // Delete mapping
+  async deleteMapping(mappingId: string): Promise<{ success: boolean; message: string; data: { deleted_mapping_id: string } }> {
+    return makeRequest<{ success: boolean; message: string; data: { deleted_mapping_id: string } }>(`/mappings/${mappingId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Send mapping to comparison view
+  async sendMappingToCompare(mappingId: string): Promise<ComparisonGroupResponse> {
+    return makeRequest<ComparisonGroupResponse>(`/mappings/${mappingId}/send-to-compare`, {
+      method: 'POST',
+    });
   },
 };
 

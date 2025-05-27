@@ -1,6 +1,243 @@
 {
   "products": [
     {
+      "product_id": 4156,
+      "product_name": "Monday Night at Backroom Comedy Club",
+      "product_price": "14.11",
+      "total_sales": 29,
+      "slots": [
+        {
+          "product_id": 4156,
+          "product_name": "Monday Night at Backroom Comedy Club",
+          "slot_id": "wcolndrhzpeplpcnmqwi",
+          "slot_label": "Monday 8pm - Overalls Comedy w/ Vanessa Prevost",
+          "slot_time": "08:00 p.m.",
+          "dates": [
+            {
+              "date_id": "ucnhzxsafkpojhgknylj",
+              "date": "June 02, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "bxqldaufferkkahdptsc",
+              "date": "June 09, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "uuqqcrjqufbzjqpeclev",
+              "date": "June 16, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "alfuxrwcrowdcxxacxey",
+              "date": "June 23, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "tldfibzgenlcdxjsknig",
+              "date": "June 30, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            }
+          ],
+          "total_dates": 5
+        },
+        {
+          "product_id": 4156,
+          "product_name": "Monday Night at Backroom Comedy Club",
+          "slot_id": "cntisvyoitkyzcryzjoa",
+          "slot_label": "Monday 10pm - Feedback Open Mic",
+          "slot_time": "10:00 p.m.",
+          "dates": [
+            {
+              "date_id": "khpxagjvciwjxhpvusej",
+              "date": "May 06, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "zbpyssuomwgxhmfbaxwc",
+              "date": "May 19, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "bqpcehygzybeymtukfqz",
+              "date": "May 26, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "xhikvqbfiozrdlnuqzvw",
+              "date": "June 02, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "vxoesagfxnbfmroxuffe",
+              "date": "June 09, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "blkgfqyvxzkmaluredzh",
+              "date": "June 16, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "erlglegsdnpkjqvoyynj",
+              "date": "June 23, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "psugpgmsumhvdqgxcxst",
+              "date": "June 30, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "qzuziclfljoibyjxqpnm",
+              "date": "July 07, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "aztpbdmgdduesyusxsec",
+              "date": "July 14, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "oyvyyhznvnbkkkvupvui",
+              "date": "July 21, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "gkquleyoxpsvrpxwoxgo",
+              "date": "July 28, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "ljyzvjxedoxmozljivdd",
+              "date": "August 04, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "lvafoxmhjppvvefwcirs",
+              "date": "August 11, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "nnnirglflnwhwrjoqtzi",
+              "date": "August 18, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "fcmcbcwajpccwcktgqkg",
+              "date": "August 25, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "yqrcarmsshfvpatuynhv",
+              "date": "September 01, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "xoiuwaaoiwfqpjswulgt",
+              "date": "September 08, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "oocbwfjrnvxrffgwcrqj",
+              "date": "September 15, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "hjdmqxccsqgtpewpbgmp",
+              "date": "September 22, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "dgzqoyeuswwsoexxlvpw",
+              "date": "September 29, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            }
+          ],
+          "total_dates": 21
+        }
+      ],
+      "slot_count": 2
+    },
+    {
       "product_id": 3986,
       "product_name": "Wednesday Night at Backroom Comedy Club",
       "product_price": "22.50",
@@ -90,7 +327,7 @@
               "date": "March 12, 2025",
               "stock": 43,
               "available": 43,
-              "total_capacity": 55,
+              "total_capacity": 47,
               "tickets_sold": 4
             },
             {
@@ -98,7 +335,7 @@
               "date": "March 19, 2025",
               "stock": 39,
               "available": 39,
-              "total_capacity": 55,
+              "total_capacity": 54,
               "tickets_sold": 15
             },
             {
@@ -178,7 +415,7 @@
               "date": "May 28, 2025",
               "stock": 49,
               "available": 49,
-              "total_capacity": 55,
+              "total_capacity": 53,
               "tickets_sold": 4
             },
             {
@@ -332,7 +569,7 @@
               "date": "January 08, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -340,7 +577,7 @@
               "date": "January 15, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -348,7 +585,7 @@
               "date": "January 22, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -356,7 +593,7 @@
               "date": "January 29, 2025",
               "stock": 53,
               "available": 53,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 2
             },
             {
@@ -364,7 +601,7 @@
               "date": "February 05, 2025",
               "stock": 52,
               "available": 52,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 3
             },
             {
@@ -372,7 +609,7 @@
               "date": "February 12, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -380,7 +617,7 @@
               "date": "February 19, 2025",
               "stock": 53,
               "available": 53,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 2
             },
             {
@@ -388,7 +625,7 @@
               "date": "February 26, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -396,7 +633,7 @@
               "date": "March 05, 2025",
               "stock": 52,
               "available": 52,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 3
             },
             {
@@ -404,7 +641,7 @@
               "date": "March 12, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -420,7 +657,7 @@
               "date": "March 26, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -428,7 +665,7 @@
               "date": "April 02, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -436,7 +673,7 @@
               "date": "April 09, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -444,7 +681,7 @@
               "date": "April 16, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -452,7 +689,7 @@
               "date": "April 23, 2025",
               "stock": 50,
               "available": 50,
-              "total_capacity": 57,
+              "total_capacity": 58,
               "tickets_sold": 8
             },
             {
@@ -460,7 +697,7 @@
               "date": "April 30, 2025",
               "stock": 50,
               "available": 50,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 5
             },
             {
@@ -468,7 +705,7 @@
               "date": "May 07, 2025",
               "stock": 47,
               "available": 47,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 8
             },
             {
@@ -476,7 +713,7 @@
               "date": "May 14, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -484,7 +721,7 @@
               "date": "May 21, 2025",
               "stock": 54,
               "available": 54,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 1
             },
             {
@@ -492,7 +729,7 @@
               "date": "May 28, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -500,7 +737,7 @@
               "date": "June 04, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -508,7 +745,7 @@
               "date": "June 11, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -516,7 +753,7 @@
               "date": "June 18, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -524,7 +761,7 @@
               "date": "June 25, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -532,7 +769,7 @@
               "date": "July 02, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -540,7 +777,7 @@
               "date": "July 09, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -548,7 +785,7 @@
               "date": "July 16, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -556,7 +793,7 @@
               "date": "July 23, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -564,7 +801,7 @@
               "date": "July 30, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -572,7 +809,7 @@
               "date": "August 06, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -580,7 +817,7 @@
               "date": "August 13, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -588,7 +825,7 @@
               "date": "August 20, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -596,7 +833,7 @@
               "date": "August 27, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -604,7 +841,7 @@
               "date": "September 03, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -612,7 +849,7 @@
               "date": "September 10, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -620,7 +857,7 @@
               "date": "September 17, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             },
             {
@@ -628,7 +865,7 @@
               "date": "September 24, 2025",
               "stock": 55,
               "available": 55,
-              "total_capacity": 57,
+              "total_capacity": 55,
               "tickets_sold": 0
             }
           ],
@@ -735,7 +972,7 @@
               "date": "March 20, 2025",
               "stock": 43,
               "available": 43,
-              "total_capacity": 55,
+              "total_capacity": 51,
               "tickets_sold": 8
             },
             {
@@ -743,7 +980,7 @@
               "date": "March 27, 2025",
               "stock": 38,
               "available": 38,
-              "total_capacity": 55,
+              "total_capacity": 53,
               "tickets_sold": 15
             },
             {
@@ -759,7 +996,7 @@
               "date": "April 10, 2025",
               "stock": 0,
               "available": 0,
-              "total_capacity": 55,
+              "total_capacity": 8,
               "tickets_sold": 8
             },
             {
@@ -767,7 +1004,7 @@
               "date": "April 17, 2025",
               "stock": 38,
               "available": 38,
-              "total_capacity": 55,
+              "total_capacity": 54,
               "tickets_sold": 16
             },
             {
@@ -791,7 +1028,7 @@
               "date": "May 08, 2025",
               "stock": 54,
               "available": 54,
-              "total_capacity": 55,
+              "total_capacity": 54,
               "tickets_sold": 0
             },
             {
@@ -807,7 +1044,7 @@
               "date": "May 22, 2025",
               "stock": 41,
               "available": 41,
-              "total_capacity": 55,
+              "total_capacity": 49,
               "tickets_sold": 8
             },
             {
@@ -993,7 +1230,7 @@
               "date": "January 30, 2025",
               "stock": 51,
               "available": 51,
-              "total_capacity": 55,
+              "total_capacity": 53,
               "tickets_sold": 2
             },
             {
@@ -1073,7 +1310,7 @@
               "date": "April 10, 2025",
               "stock": 43,
               "available": 43,
-              "total_capacity": 55,
+              "total_capacity": 51,
               "tickets_sold": 8
             },
             {
@@ -1316,7 +1553,7 @@
               "date": "January 31, 2025",
               "stock": 3,
               "available": 3,
-              "total_capacity": 55,
+              "total_capacity": 9,
               "tickets_sold": 6
             },
             {
@@ -1348,7 +1585,7 @@
               "date": "February 28, 2025",
               "stock": 40,
               "available": 40,
-              "total_capacity": 55,
+              "total_capacity": 53,
               "tickets_sold": 13
             },
             {
@@ -1372,7 +1609,7 @@
               "date": "March 21, 2025",
               "stock": 30,
               "available": 30,
-              "total_capacity": 55,
+              "total_capacity": 53,
               "tickets_sold": 23
             },
             {
@@ -1380,7 +1617,7 @@
               "date": "March 28, 2025",
               "stock": 0,
               "available": 0,
-              "total_capacity": 55,
+              "total_capacity": 19,
               "tickets_sold": 19
             },
             {
@@ -1396,7 +1633,7 @@
               "date": "April 11, 2025",
               "stock": 29,
               "available": 29,
-              "total_capacity": 55,
+              "total_capacity": 47,
               "tickets_sold": 18
             },
             {
@@ -1420,7 +1657,7 @@
               "date": "May 02, 2025",
               "stock": 40,
               "available": 40,
-              "total_capacity": 55,
+              "total_capacity": 53,
               "tickets_sold": 13
             },
             {
@@ -1436,7 +1673,7 @@
               "date": "May 16, 2025",
               "stock": 31,
               "available": 31,
-              "total_capacity": 55,
+              "total_capacity": 49,
               "tickets_sold": 18
             },
             {
@@ -1444,7 +1681,7 @@
               "date": "May 23, 2025",
               "stock": 15,
               "available": 15,
-              "total_capacity": 55,
+              "total_capacity": 25,
               "tickets_sold": 10
             },
             {
@@ -1646,7 +1883,7 @@
               "date": "February 14, 2025",
               "stock": 47,
               "available": 47,
-              "total_capacity": 55,
+              "total_capacity": 53,
               "tickets_sold": 6
             },
             {
@@ -1686,7 +1923,7 @@
               "date": "March 21, 2025",
               "stock": 17,
               "available": 17,
-              "total_capacity": 55,
+              "total_capacity": 50,
               "tickets_sold": 33
             },
             {
@@ -1694,7 +1931,7 @@
               "date": "March 28, 2025",
               "stock": 37,
               "available": 37,
-              "total_capacity": 55,
+              "total_capacity": 53,
               "tickets_sold": 16
             },
             {
@@ -1710,7 +1947,7 @@
               "date": "April 11, 2025",
               "stock": 43,
               "available": 43,
-              "total_capacity": 55,
+              "total_capacity": 51,
               "tickets_sold": 8
             },
             {
@@ -1718,7 +1955,7 @@
               "date": "April 18, 2025",
               "stock": 31,
               "available": 31,
-              "total_capacity": 55,
+              "total_capacity": 50,
               "tickets_sold": 19
             },
             {
@@ -1734,7 +1971,7 @@
               "date": "May 02, 2025",
               "stock": 43,
               "available": 43,
-              "total_capacity": 55,
+              "total_capacity": 53,
               "tickets_sold": 10
             },
             {
@@ -1961,7 +2198,7 @@
               "date": "February 08, 2025",
               "stock": 50,
               "available": 50,
-              "total_capacity": 55,
+              "total_capacity": 50,
               "tickets_sold": 0
             },
             {
@@ -1985,7 +2222,7 @@
               "date": "March 01, 2025",
               "stock": 53,
               "available": 53,
-              "total_capacity": 55,
+              "total_capacity": 53,
               "tickets_sold": 0
             },
             {
@@ -2267,7 +2504,7 @@
               "date": "February 01, 2025",
               "stock": 0,
               "available": 0,
-              "total_capacity": 55,
+              "total_capacity": 0,
               "tickets_sold": 0
             },
             {
@@ -2299,7 +2536,7 @@
               "date": "March 01, 2025",
               "stock": 21,
               "available": 21,
-              "total_capacity": 55,
+              "total_capacity": 51,
               "tickets_sold": 30
             },
             {
@@ -2307,7 +2544,7 @@
               "date": "March 08, 2025",
               "stock": 15,
               "available": 15,
-              "total_capacity": 55,
+              "total_capacity": 53,
               "tickets_sold": 38
             },
             {
@@ -2331,7 +2568,7 @@
               "date": "March 29, 2025",
               "stock": 28,
               "available": 28,
-              "total_capacity": 55,
+              "total_capacity": 47,
               "tickets_sold": 19
             },
             {
@@ -2339,7 +2576,7 @@
               "date": "April 05, 2025",
               "stock": 24,
               "available": 24,
-              "total_capacity": 55,
+              "total_capacity": 37,
               "tickets_sold": 13
             },
             {
@@ -2363,7 +2600,7 @@
               "date": "April 26, 2025",
               "stock": 41,
               "available": 41,
-              "total_capacity": 55,
+              "total_capacity": 53,
               "tickets_sold": 12
             },
             {
@@ -2581,7 +2818,7 @@
               "date": "February 01, 2025",
               "stock": 0,
               "available": 0,
-              "total_capacity": 55,
+              "total_capacity": 6,
               "tickets_sold": 6
             },
             {
@@ -2653,7 +2890,7 @@
               "date": "April 05, 2025",
               "stock": 44,
               "available": 44,
-              "total_capacity": 55,
+              "total_capacity": 51,
               "tickets_sold": 7
             },
             {
@@ -3825,181 +4062,65 @@
       "slot_count": 1
     },
     {
-      "product_id": 6410,
-      "product_name": "20-20 Perspective Comedy Show",
-      "product_price": "22.63",
-      "total_sales": 31,
+      "product_id": 37526,
+      "product_name": "Jordan Policicchio @ Backroom Comedy Club | Limited Run!",
+      "product_price": "24.76",
+      "total_sales": 0,
       "slots": [
         {
-          "product_id": 6410,
-          "product_name": "20-20 Perspective Comedy Show",
+          "product_id": 37526,
+          "product_name": "Jordan Policicchio @ Backroom Comedy Club | Limited Run!",
+          "slot_id": "xmkwfmcvbaysvrnagwpv",
+          "slot_label": "8pm Show",
+          "slot_time": "08:00 p.m.",
+          "dates": [
+            {
+              "date_id": "ykgzuyosxegmwqyuospt",
+              "date": "February 14, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "lwmolveojgrfnyuokkdq",
+              "date": "February 15, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            }
+          ],
+          "total_dates": 2
+        },
+        {
+          "product_id": 37526,
+          "product_name": "Jordan Policicchio @ Backroom Comedy Club | Limited Run!",
           "slot_id": "knmrqrdtotdzsxzdyzou",
-          "slot_label": "February: 20-20 Show",
+          "slot_label": "10pm Show",
           "slot_time": "10:00 p.m.",
           "dates": [
             {
-              "date_id": "esprmulpsralwzmxsiel",
-              "date": "February 06, 2025",
+              "date_id": "kgpnvlopyalibhcvkynp",
+              "date": "February 14, 2025",
               "stock": 55,
               "available": 55,
               "total_capacity": 55,
               "tickets_sold": 0
             },
             {
-              "date_id": "supdczvpgehgwskejiqm",
-              "date": "February 13, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            },
-            {
-              "date_id": "gbotzygfsgganngkghid",
-              "date": "February 20, 2025",
-              "stock": 51,
-              "available": 51,
-              "total_capacity": 55,
-              "tickets_sold": 4
-            },
-            {
-              "date_id": "tjwfzviocvbzatspiupn",
-              "date": "February 27, 2025",
-              "stock": 53,
-              "available": 53,
-              "total_capacity": 55,
-              "tickets_sold": 2
-            }
-          ],
-          "total_dates": 4
-        },
-        {
-          "product_id": 6410,
-          "product_name": "20-20 Perspective Comedy Show",
-          "slot_id": "vcvjmgcdtdlhqfcclqff",
-          "slot_label": "March: 20-20 Show",
-          "slot_time": "10:00 p.m.",
-          "dates": [
-            {
-              "date_id": "tgfxvthxnsqccrogirmf",
-              "date": "March 06, 2025",
-              "stock": 51,
-              "available": 51,
-              "total_capacity": 55,
-              "tickets_sold": 4
-            },
-            {
-              "date_id": "pxiavwaxvawgnfgoicuo",
-              "date": "March 13, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            },
-            {
-              "date_id": "mhqhkayvoixbxmxrerwt",
-              "date": "March 20, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            },
-            {
-              "date_id": "nrdlmrzacoodzwjsghct",
-              "date": "March 27, 2025",
+              "date_id": "cahmeyybcgfwrefiyvcl",
+              "date": "February 15, 2025",
               "stock": 55,
               "available": 55,
               "total_capacity": 55,
               "tickets_sold": 0
             }
           ],
-          "total_dates": 4
-        },
-        {
-          "product_id": 6410,
-          "product_name": "20-20 Perspective Comedy Show",
-          "slot_id": "orlmyzarffuoieuekzvf",
-          "slot_label": "April: 20-20 Show",
-          "slot_time": "10:00 p.m.",
-          "dates": [
-            {
-              "date_id": "wdwfvehvbfuyqyolllhp",
-              "date": "April 03, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            },
-            {
-              "date_id": "fnervqgmzwmrkivnmhdk",
-              "date": "April 10, 2025",
-              "stock": 52,
-              "available": 52,
-              "total_capacity": 55,
-              "tickets_sold": 3
-            },
-            {
-              "date_id": "jntxoskerccdbxboimar",
-              "date": "April 17, 2025",
-              "stock": 54,
-              "available": 54,
-              "total_capacity": 55,
-              "tickets_sold": 1
-            },
-            {
-              "date_id": "vgstysrmdsbzggjigxzz",
-              "date": "April 24, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            }
-          ],
-          "total_dates": 4
-        },
-        {
-          "product_id": 6410,
-          "product_name": "20-20 Perspective Comedy Show",
-          "slot_id": "bmwyrpwriquzukjbsnyw",
-          "slot_label": "May: 20-20 Show",
-          "slot_time": "10:00 p.m.",
-          "dates": [
-            {
-              "date_id": "vjwkhlzmmgdazbybvohk",
-              "date": "May 01, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            },
-            {
-              "date_id": "tbgyqoepowhymyzvuzln",
-              "date": "May 08, 2025",
-              "stock": 44,
-              "available": 44,
-              "total_capacity": 55,
-              "tickets_sold": 11
-            },
-            {
-              "date_id": "twmydgoosrkjycfuujgf",
-              "date": "May 15, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            },
-            {
-              "date_id": "yjbaijjtvyebcvctscjm",
-              "date": "May 22, 2025",
-              "stock": 39,
-              "available": 39,
-              "total_capacity": 55,
-              "tickets_sold": 14
-            }
-          ],
-          "total_dates": 4
+          "total_dates": 2
         }
       ],
-      "slot_count": 4
+      "slot_count": 2
     },
     {
       "product_id": 37268,
@@ -4036,67 +4157,6 @@
         {
           "product_id": 37268,
           "product_name": "Chris Robinson Headlines Backroom Comedy Club | Limited Edition",
-          "slot_id": "knmrqrdtotdzsxzdyzou",
-          "slot_label": "10pm Show",
-          "slot_time": "10:00 p.m.",
-          "dates": [
-            {
-              "date_id": "kgpnvlopyalibhcvkynp",
-              "date": "February 14, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            },
-            {
-              "date_id": "cahmeyybcgfwrefiyvcl",
-              "date": "February 15, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            }
-          ],
-          "total_dates": 2
-        }
-      ],
-      "slot_count": 2
-    },
-    {
-      "product_id": 35549,
-      "product_name": "Gang's All Here Comedy: Toronto Pop-Up Show",
-      "product_price": "27.96",
-      "total_sales": 0,
-      "slots": [
-        {
-          "product_id": 35549,
-          "product_name": "Gang's All Here Comedy: Toronto Pop-Up Show",
-          "slot_id": "xmkwfmcvbaysvrnagwpv",
-          "slot_label": "8pm Show",
-          "slot_time": "08:00 p.m.",
-          "dates": [
-            {
-              "date_id": "ykgzuyosxegmwqyuospt",
-              "date": "February 14, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            },
-            {
-              "date_id": "lwmolveojgrfnyuokkdq",
-              "date": "February 15, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            }
-          ],
-          "total_dates": 2
-        },
-        {
-          "product_id": 35549,
-          "product_name": "Gang's All Here Comedy: Toronto Pop-Up Show",
           "slot_id": "knmrqrdtotdzsxzdyzou",
           "slot_label": "10pm Show",
           "slot_time": "10:00 p.m.",
@@ -4168,7 +4228,7 @@
               "date": "May 30, 2025",
               "stock": 26,
               "available": 26,
-              "total_capacity": 26,
+              "total_capacity": 28,
               "tickets_sold": 2
             },
             {
@@ -4176,7 +4236,7 @@
               "date": "May 31, 2025",
               "stock": 23,
               "available": 23,
-              "total_capacity": 26,
+              "total_capacity": 23,
               "tickets_sold": 0
             }
           ],
@@ -4194,7 +4254,7 @@
               "date": "May 30, 2025",
               "stock": 30,
               "available": 30,
-              "total_capacity": 38,
+              "total_capacity": 30,
               "tickets_sold": 0
             },
             {
@@ -4212,65 +4272,6 @@
       "slot_count": 2
     },
     {
-      "product_id": 37294,
-      "product_name": "Overalls Comedy w/ Vanessa Prevost | An Improv Comedy Show",
-      "product_price": "17.31",
-      "total_sales": 0,
-      "slots": [
-        {
-          "product_id": 37294,
-          "product_name": "Overalls Comedy w/ Vanessa Prevost | An Improv Comedy Show",
-          "slot_id": "knmrqrdtotdzsxzdyzou",
-          "slot_label": "Overalls Comedy w/ Vanessa Prevost",
-          "slot_time": "08:00 p.m.",
-          "dates": [
-            {
-              "date_id": "bopahruytwmhztfjweqk",
-              "date": "June 02, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            },
-            {
-              "date_id": "mlxegqpsogvtkmxvbkxc",
-              "date": "June 09, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            },
-            {
-              "date_id": "emxjcgturcuxwiwwshkg",
-              "date": "June 16, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            },
-            {
-              "date_id": "cbekxgllhcsicgjfxlgn",
-              "date": "June 23, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            },
-            {
-              "date_id": "kcxtuouyascujbjpctcj",
-              "date": "June 30, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            }
-          ],
-          "total_dates": 5
-        }
-      ],
-      "slot_count": 1
-    },
-    {
       "product_id": 31907,
       "product_name": "Robyn & Jason The Gillerans live @ Backroom Comedy Club | One Night Only",
       "product_price": "27.96",
@@ -4286,9 +4287,9 @@
             {
               "date_id": "date_31907",
               "date": "June 06, 2025",
-              "stock": 53,
-              "available": 53,
-              "total_capacity": 55,
+              "stock": 52,
+              "available": 52,
+              "total_capacity": 54,
               "tickets_sold": 2
             }
           ],
@@ -4301,7 +4302,7 @@
       "product_id": 37388,
       "product_name": "Mike Rita - Big In Little Portugal | One Night Only!",
       "product_price": "38.61",
-      "total_sales": 65,
+      "total_sales": 96,
       "slots": [
         {
           "product_id": 37388,
@@ -4331,16 +4332,97 @@
             {
               "date_id": "kgpnvlopyalibhcvkynp",
               "date": "June 07, 2025",
-              "stock": 33,
-              "available": 33,
-              "total_capacity": 33,
-              "tickets_sold": 22
+              "stock": 0,
+              "available": 0,
+              "total_capacity": 53,
+              "tickets_sold": 53
             }
           ],
           "total_dates": 1
         }
       ],
       "slot_count": 2
+    },
+    {
+      "product_id": 37850,
+      "product_name": "Comedy Open House @ Backroom Comedy Club – Ask Us Anything!",
+      "product_price": "43.93",
+      "total_sales": 0,
+      "slots": [
+        {
+          "product_id": 37850,
+          "product_name": "Comedy Open House @ Backroom Comedy Club – Ask Us Anything!",
+          "slot_id": "xmkwfmcvbaysvrnagwpv",
+          "slot_label": "June",
+          "slot_time": "06:00 p.m.",
+          "dates": [
+            {
+              "date_id": "lwmolveojgrfnyuokkdq",
+              "date": "June 08, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            }
+          ],
+          "total_dates": 1
+        },
+        {
+          "product_id": 37850,
+          "product_name": "Comedy Open House @ Backroom Comedy Club – Ask Us Anything!",
+          "slot_id": "knmrqrdtotdzsxzdyzou",
+          "slot_label": "July",
+          "slot_time": "06:00 p.m.",
+          "dates": [
+            {
+              "date_id": "cahmeyybcgfwrefiyvcl",
+              "date": "July 13, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            }
+          ],
+          "total_dates": 1
+        },
+        {
+          "product_id": 37850,
+          "product_name": "Comedy Open House @ Backroom Comedy Club – Ask Us Anything!",
+          "slot_id": "rvgkqfmlobqwpbdxlrvj",
+          "slot_label": "August",
+          "slot_time": "06:00 p.m.",
+          "dates": [
+            {
+              "date_id": "ywqjhgmyypciygjxntwh",
+              "date": "August 10, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            }
+          ],
+          "total_dates": 1
+        },
+        {
+          "product_id": 37850,
+          "product_name": "Comedy Open House @ Backroom Comedy Club – Ask Us Anything!",
+          "slot_id": "idvffjqxcccyfgixfoex",
+          "slot_label": "September",
+          "slot_time": "06:00 p.m.",
+          "dates": [
+            {
+              "date_id": "zolxjtouguawmadnwsrw",
+              "date": "September 14, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            }
+          ],
+          "total_dates": 1
+        }
+      ],
+      "slot_count": 4
     },
     {
       "product_id": 30897,
@@ -4360,7 +4442,7 @@
               "date": "June 13, 2025",
               "stock": 35,
               "available": 35,
-              "total_capacity": 43,
+              "total_capacity": 55,
               "tickets_sold": 20
             },
             {
@@ -4368,7 +4450,7 @@
               "date": "June 14, 2025",
               "stock": 43,
               "available": 43,
-              "total_capacity": 43,
+              "total_capacity": 55,
               "tickets_sold": 12
             }
           ],
@@ -4386,7 +4468,7 @@
               "date": "June 13, 2025",
               "stock": 53,
               "available": 53,
-              "total_capacity": 53,
+              "total_capacity": 55,
               "tickets_sold": 2
             },
             {
@@ -4394,7 +4476,7 @@
               "date": "June 14, 2025",
               "stock": 45,
               "available": 45,
-              "total_capacity": 53,
+              "total_capacity": 49,
               "tickets_sold": 4
             }
           ],
@@ -4490,7 +4572,7 @@
               "date": "August 23, 2025",
               "stock": 53,
               "available": 53,
-              "total_capacity": 55,
+              "total_capacity": 53,
               "tickets_sold": 0
             }
           ],
@@ -4529,8 +4611,8 @@
   "failed_products": [],
   "total_products": 17,
   "failed_count": 0,
-  "total_slots": 34,
-  "total_dates": 504,
-  "last_updated": "2025-05-27T01:05:39.735089+00:00",
+  "total_slots": 35,
+  "total_dates": 513,
+  "last_updated": "2025-05-27T12:20:30.523426+00:00",
   "cache_source": "api"
 }

@@ -6,9 +6,10 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from eventbrite import EventbriteClient, EventbriteAPIError
 from woocommerce import WooCommerceClient, WooCommerceAPIError
+from event_mappings import EventMappingManager, EventMapping, UnmappedEvent
 
 app = FastAPI(title="Eventbrite Capacity Manager & WooCommerce FooEvents", version="1.0.0")
 
@@ -30,10 +31,30 @@ class CapacityRequest(BaseModel):
     event_id: Optional[str] = None
     ticket_class_id: Optional[str] = None
 
+class WooCommerceInventoryRequest(BaseModel):
+    product_id: int
+    slot_id: Optional[str] = None
+    date_id: Optional[str] = None
+
 class CapacityResponse(BaseModel):
     success: bool
     message: str
     data: dict
+
+# Mapping-related Pydantic models
+class CreateMappingRequest(BaseModel):
+    woocommerce_product_id: str
+    eventbrite_series_ids: List[str]
+    name: str
+
+class UpdateMappingRequest(BaseModel):
+    name: Optional[str] = None
+    woocommerce_product_id: Optional[str] = None
+    eventbrite_series_ids: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+class SendToCompareRequest(BaseModel):
+    mapping_id: str
 
 @app.get("/")
 async def root():
@@ -315,6 +336,48 @@ async def get_wordpress_db_status():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+@app.post("/woocommerce/inventory/increment")
+async def increment_woocommerce_inventory(request: WooCommerceInventoryRequest):
+    """Increment WooCommerce inventory by 1"""
+    try:
+        client = WooCommerceClient()
+        result = await client.increment_woocommerce_inventory(
+            request.product_id, 
+            request.slot_id, 
+            request.date_id
+        )
+        
+        return CapacityResponse(
+            success=True,
+            message=f"Successfully incremented inventory from {result['old_stock']} to {result['new_stock']}",
+            data=result
+        )
+    except WooCommerceAPIError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/woocommerce/inventory/decrement")
+async def decrement_woocommerce_inventory(request: WooCommerceInventoryRequest):
+    """Decrement WooCommerce inventory by 1"""
+    try:
+        client = WooCommerceClient()
+        result = await client.decrement_woocommerce_inventory(
+            request.product_id, 
+            request.slot_id, 
+            request.date_id
+        )
+        
+        return CapacityResponse(
+            success=True,
+            message=f"Successfully decremented inventory from {result['old_stock']} to {result['new_stock']}",
+            data=result
+        )
+    except WooCommerceAPIError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
 @app.get("/woocommerce/debug/product/{product_id}")
 async def debug_product(product_id: int):
     """Debug endpoint to check a specific product's data and FooEvents parsing"""
@@ -410,6 +473,313 @@ async def debug_wordpress_tickets(product_id: int):
             "error": str(e),
             "product_id": product_id
         }
+
+# Event Mapping endpoints
+
+@app.get("/mappings")
+async def get_all_mappings():
+    """Get all event mappings (manual fallback, programmatic, and user overrides) and unmapped events"""
+    try:
+        mapping_manager = EventMappingManager()
+        
+        # Get data from both platforms for programmatic matching
+        eventbrite_client = EventbriteClient()
+        woocommerce_client = WooCommerceClient()
+        
+        # Get series and products data
+        series_result = await eventbrite_client.get_organization_series(use_cache=True)
+        products_result = await woocommerce_client.get_all_fooevents_products(use_cache=True)
+        
+        series_data = series_result.get('series', [])
+        products_data = products_result.get('products', [])
+        
+        # Get all mappings and unmapped events
+        all_mappings = mapping_manager.get_all_mappings(products_data, series_data)
+        unmapped_events = mapping_manager.get_unmapped_events(products_data, series_data)
+        
+        # Convert to dict format for JSON response
+        mappings_data = [
+            {
+                'id': mapping.id,
+                'name': mapping.name,
+                'woocommerce_product_id': mapping.woocommerce_product_id,
+                'eventbrite_series_ids': mapping.eventbrite_series_ids,
+                'mapping_source': mapping.mapping_source,
+                'is_active': mapping.is_active,
+                'last_updated': mapping.last_updated
+            }
+            for mapping in all_mappings
+        ]
+        
+        unmapped_data = [
+            {
+                'id': event.id,
+                'platform': event.platform,
+                'name': event.name,
+                'product_id': event.product_id,
+                'series_id': event.series_id,
+                'reason': event.reason
+            }
+            for event in unmapped_events
+        ]
+        
+        return CapacityResponse(
+            success=True,
+            message=f"Retrieved {len(mappings_data)} mappings and {len(unmapped_data)} unmapped events",
+            data={
+                'mappings': mappings_data,
+                'unmapped_events': unmapped_data,
+                'summary': {
+                    'total_mappings': len(mappings_data),
+                    'manual_fallback_count': len([m for m in mappings_data if m['mapping_source'] == 'manual_fallback']),
+                    'programmatic_count': len([m for m in mappings_data if m['mapping_source'] == 'programmatic']),
+                    'user_override_count': len([m for m in mappings_data if m['mapping_source'] == 'user_override']),
+                    'total_unmapped': len(unmapped_data),
+                    'unmapped_woocommerce': len([e for e in unmapped_data if e['platform'] == 'woocommerce']),
+                    'unmapped_eventbrite': len([e for e in unmapped_data if e['platform'] == 'eventbrite'])
+                }
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.get("/mappings/{mapping_id}")
+async def get_mapping(mapping_id: str):
+    """Get a specific mapping by ID"""
+    try:
+        mapping_manager = EventMappingManager()
+        mapping = mapping_manager.get_mapping_by_id(mapping_id)
+        
+        if not mapping:
+            raise HTTPException(status_code=404, detail=f"Mapping with ID {mapping_id} not found")
+        
+        mapping_data = {
+            'id': mapping.id,
+            'name': mapping.name,
+            'woocommerce_product_id': mapping.woocommerce_product_id,
+            'eventbrite_series_ids': mapping.eventbrite_series_ids,
+            'mapping_source': mapping.mapping_source,
+            'is_active': mapping.is_active,
+            'last_updated': mapping.last_updated
+        }
+        
+        return CapacityResponse(
+            success=True,
+            message=f"Retrieved mapping {mapping_id}",
+            data=mapping_data
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/mappings")
+async def create_mapping(request: CreateMappingRequest):
+    """Create a new user override mapping"""
+    try:
+        mapping_manager = EventMappingManager()
+        
+        mapping = mapping_manager.create_user_mapping(
+            woocommerce_product_id=request.woocommerce_product_id,
+            eventbrite_series_ids=request.eventbrite_series_ids,
+            name=request.name
+        )
+        
+        mapping_data = {
+            'id': mapping.id,
+            'name': mapping.name,
+            'woocommerce_product_id': mapping.woocommerce_product_id,
+            'eventbrite_series_ids': mapping.eventbrite_series_ids,
+            'mapping_source': mapping.mapping_source,
+            'is_active': mapping.is_active,
+            'last_updated': mapping.last_updated
+        }
+        
+        return CapacityResponse(
+            success=True,
+            message=f"Created new mapping {mapping.id}",
+            data=mapping_data
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.put("/mappings/{mapping_id}")
+async def update_mapping(mapping_id: str, request: UpdateMappingRequest):
+    """Update an existing mapping"""
+    try:
+        mapping_manager = EventMappingManager()
+        
+        # Convert request to dict, excluding None values
+        update_data = {k: v for k, v in request.dict().items() if v is not None}
+        
+        mapping = mapping_manager.update_mapping(mapping_id, **update_data)
+        
+        if not mapping:
+            raise HTTPException(status_code=404, detail=f"Mapping with ID {mapping_id} not found")
+        
+        mapping_data = {
+            'id': mapping.id,
+            'name': mapping.name,
+            'woocommerce_product_id': mapping.woocommerce_product_id,
+            'eventbrite_series_ids': mapping.eventbrite_series_ids,
+            'mapping_source': mapping.mapping_source,
+            'is_active': mapping.is_active,
+            'last_updated': mapping.last_updated
+        }
+        
+        return CapacityResponse(
+            success=True,
+            message=f"Updated mapping {mapping_id}",
+            data=mapping_data
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.delete("/mappings/{mapping_id}")
+async def delete_mapping(mapping_id: str):
+    """Delete a user override mapping"""
+    try:
+        mapping_manager = EventMappingManager()
+        
+        success = mapping_manager.delete_mapping(mapping_id)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail=f"User override mapping with ID {mapping_id} not found")
+        
+        return CapacityResponse(
+            success=True,
+            message=f"Deleted mapping {mapping_id}",
+            data={'deleted_mapping_id': mapping_id}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/mappings/{mapping_id}/send-to-compare")
+async def send_mapping_to_compare(mapping_id: str):
+    """Prepare a mapping group for the comparison view"""
+    try:
+        mapping_manager = EventMappingManager()
+        mapping = mapping_manager.get_mapping_by_id(mapping_id)
+        
+        if not mapping:
+            raise HTTPException(status_code=404, detail=f"Mapping with ID {mapping_id} not found")
+        
+        # Get detailed data for comparison
+        eventbrite_client = EventbriteClient()
+        woocommerce_client = WooCommerceClient()
+        
+        # Get full WooCommerce product data
+        wc_full_product = await woocommerce_client.get_product_inventory(int(mapping.woocommerce_product_id))
+        
+        # Get Eventbrite series data
+        eb_series_data = []
+        for series_id in mapping.eventbrite_series_ids:
+            try:
+                # Get from the cached series data
+                series_result = await eventbrite_client.get_organization_series(use_cache=True)
+                series_list = series_result.get('series', [])
+                series_data = next((s for s in series_list if str(s['series_id']) == series_id), None)
+                if series_data:
+                    eb_series_data.append(series_data)
+            except Exception as e:
+                print(f"Error getting series {series_id}: {e}")
+        
+        # Select WooCommerce slot/date combinations to match number of Eventbrite series
+        num_eventbrite_series = len(eb_series_data)
+        selected_wc_combinations = []
+        
+        if wc_full_product and 'slots' in wc_full_product:
+            slots = wc_full_product['slots']
+            
+            if num_eventbrite_series == 1:
+                # Single mapping - select first slot, first date
+                if slots and len(slots) > 0:
+                    slot = slots[0]
+                    if slot.get('dates') and len(slot['dates']) > 0:
+                        # Sort dates by date string and pick first upcoming
+                        dates = slot['dates']
+                        dates_sorted = sorted(dates, key=lambda d: woocommerce_client._parse_date(d.get('date', '')))
+                        
+                        selected_wc_combinations.append({
+                            'product_id': wc_full_product['product_id'],
+                            'product_name': wc_full_product['product_name'],
+                            'slot_id': slot['slot_id'],
+                            'slot_label': slot['slot_label'],
+                            'slot_time': slot['slot_time'],
+                            'date_id': dates_sorted[0]['date_id'],
+                            'date': dates_sorted[0]['date'],
+                            'stock': dates_sorted[0]['stock'],
+                            'available': dates_sorted[0]['available'],
+                            'total_capacity': dates_sorted[0]['total_capacity'],
+                            'tickets_sold': dates_sorted[0]['tickets_sold']
+                        })
+            elif num_eventbrite_series > 1:
+                # Multiple mappings - select first occurrence from multiple slots to match count
+                slots_with_dates = []
+                for slot in slots:
+                    if slot.get('dates') and len(slot['dates']) > 0:
+                        # Sort dates by date string and pick first upcoming for each slot
+                        dates = slot['dates']
+                        dates_sorted = sorted(dates, key=lambda d: woocommerce_client._parse_date(d.get('date', '')))
+                        slots_with_dates.append((slot, dates_sorted[0]))
+                
+                # Sort slots by time if possible (8pm before 10pm)
+                def extract_slot_hour(slot_time):
+                    """Extract hour from slot time for sorting"""
+                    if not slot_time:
+                        return 99
+                    slot_time_lower = slot_time.lower()
+                    if '8' in slot_time_lower and 'pm' in slot_time_lower:
+                        return 8
+                    elif '10' in slot_time_lower and 'pm' in slot_time_lower:
+                        return 10
+                    # Try to extract number
+                    import re
+                    match = re.search(r'(\d{1,2})', slot_time_lower)
+                    if match:
+                        return int(match.group(1))
+                    return 99
+                
+                slots_with_dates.sort(key=lambda x: extract_slot_hour(x[0].get('slot_time', '')))
+                
+                # Select up to num_eventbrite_series combinations
+                for i in range(min(num_eventbrite_series, len(slots_with_dates))):
+                    slot, first_date = slots_with_dates[i]
+                    selected_wc_combinations.append({
+                        'product_id': wc_full_product['product_id'],
+                        'product_name': wc_full_product['product_name'],
+                        'slot_id': slot['slot_id'],
+                        'slot_label': slot['slot_label'],
+                        'slot_time': slot['slot_time'],
+                        'date_id': first_date['date_id'],
+                        'date': first_date['date'],
+                        'stock': first_date['stock'],
+                        'available': first_date['available'],
+                        'total_capacity': first_date['total_capacity'],
+                        'tickets_sold': first_date['tickets_sold']
+                    })
+        
+        comparison_data = {
+            'mapping_id': mapping_id,
+            'mapping_name': mapping.name,
+            'woocommerce_combinations': selected_wc_combinations,
+            'eventbrite_series': eb_series_data,
+            'comparison_ready': True
+        }
+        
+        return CapacityResponse(
+            success=True,
+            message=f"Prepared mapping {mapping_id} for comparison with {len(selected_wc_combinations)} WooCommerce combinations and {len(eb_series_data)} Eventbrite series",
+            data=comparison_data
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

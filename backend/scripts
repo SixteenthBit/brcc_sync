@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+"""
+Verify the database health after our fixes
+"""
+
+import os
+import json
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def verify_database_health():
+    """Verify that the database is healthy and no corruption exists"""
+    
+    consumer_key = os.getenv('WOOCOMMERCE_CONSUMER_KEY')
+    consumer_secret = os.getenv('WOOCOMMERCE_CONSUMER_SECRET')
+    api_url = os.getenv('WOOCOMMERCE_API_URL', 'https://backroomcomedyclub.com')
+    
+    if not consumer_key or not consumer_secret:
+        print("ERROR: WooCommerce credentials not found")
+        return False
+    
+    base_url = f"{api_url.rstrip('/')}/wp-json/wc/v3"
+    
+    print("🔍 VERIFYING DATABASE HEALTH")
+    print("=" * 50)
+    
+    # Check product 3986 specifically
+    product_id = 3986
+    
+    try:
+        url = f"{base_url}/products/{product_id}"
+        params = {
+            'consumer_key': consumer_key,
+            'consumer_secret': consumer_secret
+        }
+        
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        product = response.json()
+        
+        product_name = product.get('name', 'Unknown')
+        print(f"✅ Product: {product_name} (ID: {product_id})")
+        
+        # Check the fooevents_bookings_options_serialized data
+        meta_data = product.get('meta_data', [])
+        
+        for meta in meta_data:
+            if meta.get('key') == 'fooevents_bookings_options_serialized':
+                value = meta.get('value')
+                
+                print(f"📊 FooEvents data type: {type(value).__name__}")
+                
+                if isinstance(value, str):
+                    print("✅ Data is stored as STRING (correct!)")
+                    try:
+                        parsed_data = json.loads(value)
+                        print(f"✅ JSON is valid (length: {len(value)} chars)")
+                        print(f"✅ Parsed data has {len(parsed_data)} slots")
+                        
+                        # Show first slot as example
+                        if parsed_data:
+                            first_slot_id = list(parsed_data.keys())[0]
+                            first_slot = parsed_data[first_slot_id]
+                            print(f"✅ Example slot: {first_slot.get('label', 'No label')}")
+                        
+                        return True
+                        
+                    except json.JSONDecodeError as e:
+                        print(f"❌ JSON is INVALID: {e}")
+                        return False
+                        
+                else:
+                    print(f"❌ Data is stored as {type(value).__name__} (WRONG! Should be string)")
+                    return False
+        
+        print("❌ No FooEvents booking data found")
+        return False
+        
+    except Exception as e:
+        print(f"❌ Error checking product: {e}")
+        return False
+
+def test_website_accessibility():
+    """Test if the website is accessible and not throwing errors"""
+    
+    print(f"\n🌐 TESTING WEBSITE ACCESSIBILITY")
+    print("=" * 50)
+    
+    try:
+        # Test the calendar page that was failing before
+        calendar_url = "https://backroomcomedyclub.com/calendar/"
+        
+        response = requests.get(calendar_url, timeout=10)
+        
+        if response.status_code == 200:
+            print("✅ Calendar page loads successfully!")
+            
+            # Check if there are any PHP errors in the response
+            if "Fatal error" in response.text or "json_decode()" in response.text:
+                print("❌ PHP errors still detected in page content")
+                return False
+            else:
+                print("✅ No PHP errors detected in page content")
+                return True
+        else:
+            print(f"❌ Calendar page returned status: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error accessing website: {e}")
+        return False
+
+if __name__ == '__main__':
+    print("🔧 COMPREHENSIVE DATABASE & WEBSITE HEALTH CHECK")
+    print("=" * 60)
+    
+    db_healthy = verify_database_health()
+    website_working = test_website_accessibility()
+    
+    print(f"\n📋 FINAL REPORT")
+    print("=" * 30)
+    print(f"Database Health: {'✅ HEALTHY' if db_healthy else '❌ ISSUES'}")
+    print(f"Website Access:  {'✅ WORKING' if website_working else '❌ ISSUES'}")
+    
+    if db_healthy and website_working:
+        print(f"\n🎉 ALL SYSTEMS GO!")
+        print("✅ Database is healthy")
+        print("✅ Website is working")
+        print("✅ Inventory management is safe to use")
+    else:
+        print(f"\n⚠️  ISSUES DETECTED")
+        if not db_healthy:
+            print("❌ Database needs attention")
+        if not website_working:
+            print("❌ Website needs attention") 

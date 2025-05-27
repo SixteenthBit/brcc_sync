@@ -399,28 +399,27 @@ class EventbriteClient:
             raise EventbriteAPIError(f"Failed to get organization series: {str(e)}")
 
     def _load_cached_series(self) -> Optional[Dict[str, Any]]:
-        """Load series data from cache file if it exists and is recent"""
+        """Load series data from cache file if it exists"""
         try:
             if os.path.exists(self.cache_file):
                 with open(self.cache_file, 'r', encoding='utf-8') as f:
                     cached_data = json.load(f)
                 
-                # Check if cache is less than 1 hour old
+                # Calculate cache age for display purposes
                 last_updated = cached_data.get('last_updated')
                 if last_updated:
                     cache_time = datetime.fromisoformat(last_updated)
                     now = datetime.now(timezone.utc)
-                    age_hours = (now - cache_time).total_seconds() / 3600
+                    cache_age_minutes = int((now - cache_time).total_seconds() / 60)
                     
-                    if age_hours < 1:  # Cache is fresh
-                        cached_data['cache_source'] = 'cache'
-                        cached_data['cache_age_minutes'] = int((now - cache_time).total_seconds() / 60)
-                        return cached_data
-                    else:
-                        print(f"Cache is {age_hours:.1f} hours old, fetching fresh data...")
+                    cached_data['cache_source'] = 'cache'
+                    cached_data['cache_age_minutes'] = cache_age_minutes
+                    
+                    print(f"Loaded Eventbrite cache ({cache_age_minutes} minutes old)")
+                    return cached_data
                 
         except (json.JSONDecodeError, ValueError, KeyError) as e:
-            print(f"Error loading cache: {e}")
+            print(f"Error loading Eventbrite cache: {e}")
         
         return None
 

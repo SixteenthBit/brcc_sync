@@ -1,0 +1,324 @@
+/* Event Manager Container */
+.event-manager {
+  min-height: 100vh;
+  background: #fafbfc;
+}
+
+.event-manager-content {
+  padding: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  gap: 24px;
+}
+
+.header-content h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.header-content p {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Content Grid Layouts */
+.content-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1fr;
+}
+
+/* Two column layout for woocommerce mode */
+.content-grid:has(.details-section) {
+  grid-template-columns: 2fr 1fr;
+}
+
+/* Eventbrite vertical layout */
+.eventbrite-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.series-section,
+.woocommerce-section {
+  min-width: 0; /* Allow content to shrink */
+}
+
+.capacity-section,
+.details-section {
+  min-width: 300px;
+}
+
+/* Override capacity section for eventbrite layout */
+.eventbrite-layout .capacity-section {
+  min-width: auto;
+  width: 100%;
+}
+
+.eventbrite-layout .capacity-section .section-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px solid #e1e5e9;
+}
+
+.eventbrite-layout .capacity-section .card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-bottom: none;
+}
+
+.eventbrite-layout .capacity-section .card-title {
+  color: white;
+  font-size: 20px;
+}
+
+/* Section Cards */
+.section-card {
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.section-card .card-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e1e5e9;
+  background: #f8fafc;
+}
+
+.section-card .card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.section-card .card-body {
+  padding: 24px;
+}
+
+/* Event Details */
+.event-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.detail-value {
+  font-size: 14px;
+  color: #1f2937;
+  font-weight: 600;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* Management Layout (for capacity mode) */
+.management-layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 60vh;
+}
+
+.capacity-manager-section {
+  width: 100%;
+  max-width: 800px;
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.capacity-manager-section .card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-bottom: none;
+}
+
+.capacity-manager-section .card-title {
+  color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .content-grid:has(.details-section) {
+    grid-template-columns: 1fr;
+  }
+  
+  .capacity-section,
+  .details-section {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 1024px) {
+  .event-manager-content {
+    padding: 24px 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .content-grid,
+  .eventbrite-layout {
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .event-manager-content {
+    padding: 16px;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .section-card .card-header {
+    padding: 16px;
+  }
+
+  .eventbrite-layout {
+    gap: 16px;
+  }
+
+  .eventbrite-layout .capacity-section .card-title {
+    font-size: 18px;
+  }
+
+  .section-card .card-body {
+    padding: 16px;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .header-actions .btn {
+    justify-content: center;
+  }
+
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .detail-value {
+    align-self: stretch;
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .management-layout {
+    min-height: 50vh;
+  }
+
+  .capacity-manager-section {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Animation for smooth transitions */
+.section-card {
+  transition: all 0.2s ease;
+}
+
+.section-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Focus states for accessibility */
+.section-card:focus-within {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Loading and error states */
+.section-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.section-error {
+  padding: 20px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+  margin: 16px 0;
+}
+
+/* Integration with existing components */
+.event-manager .series-viewer,
+.event-manager .woocommerce-viewer,
+.event-manager .capacity-manager {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.event-manager .series-viewer .series-header,
+.event-manager .woocommerce-viewer .woocommerce-header {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+} 

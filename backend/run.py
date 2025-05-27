@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Development server runner for the Eventbrite Capacity Manager backend.
+Unified server runner for the Backroom Comedy Club Event Management backend.
+Supports both development and production modes.
 """
 
 import uvicorn
@@ -33,9 +34,36 @@ async def sync_on_startup():
         print("⚠️  Server will start but cached data may be stale")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Development server for BRCC Event Management System')
+    parser = argparse.ArgumentParser(
+        description='BRCC Event Management System Server',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''
+Examples:
+  python run.py                    # Development mode with cache
+  python run.py --sync             # Development mode with fresh sync
+  python run.py --prod             # Production mode with cache
+  python run.py --prod --sync      # Production mode with fresh sync
+  python run.py --prod --port 8080 # Production on different port
+
+Cache Behavior:
+  Without --sync: Uses cached data (fast startup)
+  With --sync:    Fetches fresh data from APIs (slower startup)
+  
+  Cache never expires automatically - only manual refresh via:
+  - UI sync buttons
+  - --sync CLI flag
+  - /series/sync or /woocommerce/products/sync API endpoints
+        '''
+    )
+    
+    parser.add_argument('--prod', action='store_true', 
+                       help='Run in production mode (no auto-reload)')
     parser.add_argument('--sync', action='store_true', 
                        help='Sync fresh data from APIs on startup (otherwise uses cache)')
+    parser.add_argument('--host', default='0.0.0.0', 
+                       help='Host to bind to (default: 0.0.0.0)')
+    parser.add_argument('--port', type=int, default=8000, 
+                       help='Port to bind to (default: 8000)')
     
     args = parser.parse_args()
     
@@ -43,10 +71,13 @@ if __name__ == "__main__":
     backend_dir = Path(__file__).parent
     os.chdir(backend_dir)
     
-    print("🚀 Starting Backroom Comedy Club Event Management Backend...")
-    print("📍 Backend running at: http://localhost:8000")
+    mode = "Production" if args.prod else "Development"
+    print(f"🚀 Starting Backroom Comedy Club Event Management Backend ({mode})...")
+    print(f"📍 Backend running at: http://{args.host}:{args.port}")
     print("📖 API docs available at: http://localhost:8000/docs")
-    print("🔄 Auto-reload enabled for development")
+    
+    if not args.prod:
+        print("🔄 Auto-reload enabled for development")
     
     if args.sync:
         print("🔄 Sync mode enabled - will fetch fresh data on startup")
@@ -59,9 +90,9 @@ if __name__ == "__main__":
     
     uvicorn.run(
         "app:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        reload_dirs=[str(backend_dir)],
+        host=args.host,
+        port=args.port,
+        reload=not args.prod,  # Auto-reload only in development
+        reload_dirs=[str(backend_dir)] if not args.prod else None,
         log_level="info"
     ) 
