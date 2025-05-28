@@ -48,32 +48,6 @@ interface DataState {
   error: string | null;
 }
 
-const parseWooCommerceId = (id: string) => {
-  const parts = id.split('_');
-  const productId = parseInt(parts[0], 10);
-  const slotId = parts.length > 1 ? parts[1] : null;
-  const dateId = parts.length > 2 ? parts[2] : null;
-  return { productId, slotId, dateId };
-};
-
-const parseEventbriteId = (id: string) => {
-  const parts = id.split('_');
-  const seriesId = parts[0];
-  const occurrenceId = parts.length > 1 ? parts[1] : seriesId;
-  return { seriesId, occurrenceId };
-};
-
-const getEventSold = (event: SelectedEvent): number => {
-  if (event.type === 'woocommerce') {
-    const details = event.details;
-    return details?.sold || 0;
-  } else if (event.type === 'eventbrite') {
-    const details = event.details;
-    return details?.quantity_sold || 0;
-  }
-  return 0;
-};
-
 const ComparisonView: React.FC<ComparisonViewProps> = ({
   selectedEvents,
   onEventSelect,
@@ -839,11 +813,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
   };
 
   // Add this function to refresh event data after updates
-  const refreshData = async () => {
-    await loadEventDetails();
-  };
-
-  // 1. Extract a single-event refresh function
   const refreshEventDetails = async (event: SelectedEvent) => {
     const key = `${event.type}-${event.id}`;
     setEventDetails(prev => ({
@@ -974,22 +943,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
     }
   };
 
-  // 3. Table-level refresh functions
-  const refreshAllDates = async () => {
-    for (const event of selectedEvents) {
-      await refreshEventDetails(event);
-    }
-  };
-  const refreshAllSlots = async () => {
-    for (const event of selectedEvents) {
-      if (event.type === 'woocommerce') {
-        await refreshWooCommerceSlot(event);
-      } else {
-        await refreshEventDetails(event);
-      }
-    }
-  };
-
   const handleSyncInventory = async () => {
     if (!totalCapacity || totalCapacity < 0) {
       setSyncError('Total capacity must be a positive number');
@@ -1109,29 +1062,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
     } finally {
       setSyncLoading(false);
     }
-  };
-
-  // Add helper function to get Eventbrite ticket class ID from event details
-  const getEventbriteTicketClassId = (event: SelectedEvent): string | null => {
-    if (event.type !== 'eventbrite') return null;
-    
-    // First check event.details
-    if (event.details?.ticket_class_id) return event.details.ticket_class_id;
-    
-    // Then try to find from occurrence in data state
-    const { seriesId, occurrenceId } = parseEventbriteId(event.id);
-    const series = dataState.eventbriteSeries.find(s => s.series_id === seriesId);
-    if (!series) return null;
-    
-    const occurrence = series.events.find(e => e.occurrence_id === occurrenceId);
-    if (!occurrence) return null;
-    
-    // Get first ticket class from the event details we loaded earlier
-    const key = `eventbrite-${event.id}`;
-    const details = eventDetails[key];
-    if (details?.ticketClass?.id) return details.ticketClass.id;
-    
-    return null;
   };
 
   // Add this helper for a spinner
