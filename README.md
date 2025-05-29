@@ -17,7 +17,7 @@ This application provides unified management for two distinct event platforms:
 4. **Real-time Updates**: Live inventory adjustments without database corruption risks
 5. **Production-Ready Reliability**: Robust error handling and fallback detection mechanisms
 
-## ✨ Features
+## ✨ Features 
 
 ### Modern Dashboard Interface
 - 📱 **Responsive Sidebar Navigation**: Collapsible sidebar with mobile-responsive design
