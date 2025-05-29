@@ -5,8 +5,15 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    target: 'es2015',
+    target: 'es2020', // Updated to match TypeScript target and support modern syntax
     minify: 'esbuild',
-    sourcemap: false
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        // Ensure compatibility with older browsers while supporting modern syntax
+        format: 'es',
+        manualChunks: undefined
+      }
+    }
   }
 })
