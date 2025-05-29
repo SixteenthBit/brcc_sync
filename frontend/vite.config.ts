@@ -5,8 +5,12 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    target: 'es2015',
-    minify: 'esbuild',
-    sourcemap: false
+    target: ['es2015', 'chrome58', 'firefox57', 'safari11'],
+    minify: 'terser', // Different minifier than esbuild
+    rollupOptions: {
+      output: {
+        format: 'es'
+      }
+    }
   }
 })
