@@ -42,69 +42,39 @@ WordPress FooEvents products come in multiple configurations that require differ
 2. **FooEvents Bookings**: Multi-slot events using complex booking metadata
 3. **Hybrid Products**: Products with booking metadata but WooCommerce stock management
 
-**Critical Importance**: Wrong detection leads to database corruption, causing website downtime and lost revenue.
+**Critical Importance**: Wrong detection leads to database corruption, causing website downtime and lost revenue. The system employs a multi-layered approach in `extract_fooevents_data` to determine the nature of a FooEvents product.
 
-### Detection Algorithm Design
+### `extract_fooevents_data` - Detection Algorithm Design
 
+The primary goal is to correctly identify if a product uses complex booking metadata from `fooevents_bookings_options_serialized` (FBOS) or if it should be treated as a single event (potentially using WooCommerce's main stock or simpler event flags).
+
+```mermaid
+graph TD
+    A[Start extract_fooevents_data] --> B{Product has meta_data?};
+    B -- No --> Z[Return None];
+    B -- Yes --> C{Attempt to parse fooevents_bookings_options_serialized (FBOS)};
+    C -- Parse Error --> D[Log Error, FBOS unusable];
+    C -- Success --> E{Is parsed FBOS data valid AND complex/multi-slot?};
+    E -- Yes --> F[Return parsed FBOS data (prioritized for complex bookings)];
+    E -- No (FBOS missing, empty, simple, or synthetic) --> G{manage_stock is True AND stock_quantity exists?};
+    D --> G; %% Error in parsing FBOS also leads to checking other indicators
+    G -- Yes --> H[Generate synthetic data using product stock_quantity];
+    H --> I[Return synthetic data];
+    G -- No --> J{WooCommerceEventsEvent meta == 'Event'?};
+    J -- Yes --> K[Generate synthetic data (stock derived/defaulted in helper)];
+    K --> I;
+    J -- No --> L{FBOS was parsed earlier (but not complex) AND matches known synthetic pattern?};
+    L -- Yes --> M[Generate synthetic data based on FBOS content (stock derived/defaulted in helper)];
+    M --> I;
+    L -- No --> Z;
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          Product Type Detection Flow                        │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                            ┌───────▼────────┐
-                            │  Get Product   │
-                            │  from WC API   │
-                            └───────┬────────┘
-                                    │
-                        ┌───────────▼───────────┐
-                        │ LAYER 1: Stock Check  │
-                        │ manage_stock=True?    │
-                        │ stock_quantity exists?│
-                        └───────────┬───────────┘
-                                   Yes│          │No
-                              ┌────────▼─┐       │
-                              │ Normal   │       │
-                              │FooEvents │       │
-                              └──────────┘       │
-                                                │
-                           ┌────────────────────▼───────────────────┐
-                           │ LAYER 2: Booking Metadata Analysis    │
-                           │ Has fooevents_bookings_options?        │
-                           └────────────────────┬───────────────────┘
-                                              Yes│          │No
-                                                 │          │
-                        ┌────────────────────────▼─┐        │
-                        │ LAYER 3: Pattern Check  │        │
-                        │ Synthetic patterns?      │        │
-                        │ event_{id}, date_{id}    │        │
-                        └────────────────────────┬─┘        │
-                                               Yes│   │No    │
-                                          ┌───────▼─┐ │      │
-                                          │ Normal  │ │      │
-                                          │FooEvents│ │      │
-                                          └─────────┘ │      │
-                                                     │      │
-                           ┌─────────────────────────▼──────▼─────────────────┐
-                           │ LAYER 4: Structure Analysis                      │
-                           │ Nested add_date structure? Real date patterns?   │
-                           └─────────────────────────┬─────────────────────────┘
-                                                   Yes│          │No
-                                              ┌────────▼─┐       │
-                                              │FooEvents │       │
-                                              │ Bookings │       │
-                                              └──────────┘       │
-                                                                │
-                                   ┌────────────────────────────▼──────────────────┐
-                                   │ LAYER 5: Fallback Safety                      │
-                                   │ Default to FooEvents Bookings for safety      │
-                                   │ (Prevents inventory corruption)               │
-                                   └────────────────────────────┬──────────────────┘
-                                                                │
-                                                       ┌────────▼─┐
-                                                       │FooEvents │
-                                                       │ Bookings │
-                                                       └──────────┘
-```
+**Key Logic Points for `extract_fooevents_data`:**
+1.  **Prioritize Complex FBOS**: If `fooevents_bookings_options_serialized` is present, parsable, and indicates a complex multi-slot/date structure, this raw booking data is returned directly. This allows downstream functions like `format_booking_slots` to handle the detailed interpretation.
+2.  **Fallback to Single Event Indicators**: If complex FBOS data isn't found or applicable:
+    *   Product-level `manage_stock: true` (with `stock_quantity`) triggers synthetic single-event data generation.
+    *   An explicit `WooCommerceEventsEvent: Event` meta flag also triggers synthetic single-event data.
+    *   If FBOS was parsed but only matched a simple synthetic pattern (and wasn't complex), it's treated as a synthetic single event.
+3.  **Synthetic Data Generation**: The `_generate_synthetic_data` helper attempts to find the most relevant stock figure for single events, whether from `stock_quantity` or by inspecting simple FBOS structures if present.
 
 ### Product Type Examples & Detection Logic
 
@@ -427,26 +397,27 @@ Receive-Job -Name "BackendDev"
 
 **Implementation**:
 ```python
-class WordPressDB:
-    def get_tickets_sold_for_date(self, product_id: int, slot: str, date: str) -> int:
-        """Get real ticket sales from WordPress database"""
-        query = """
-        SELECT COUNT(*) as ticket_count
-        FROM wp_wc_order_product_addons_lookup opal
-        JOIN wp_wc_orders o ON opal.order_id = o.id
-        WHERE opal.product_id = %s
-        AND opal.addon_name = 'BookingSlot'
-        AND opal.addon_value = %s
-        AND JSON_EXTRACT(opal.addon_value, '$.BookingDate') = %s
-        AND o.status IN ('wc-processing', 'wc-completed')
-        """
-        
-        with self.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(query, (product_id, slot, date))
-                result = cursor.fetchone()
-                return result['ticket_count'] if result else 0
+class WordPressDB: # Simplified example
+    def get_tickets_sold_for_date(self, product_id: int, slot_label: str, date_str: str) -> int:
+        """Get real ticket sales from WordPress database for a specific slot and date."""
+        # ... (actual query as in woocommerce.py)
+        pass
+    
+    def get_total_tickets_sold_for_product(self, product_id: int) -> int:
+        """Get total tickets sold for a product (typically for non-booking, single events)."""
+        # ... (query to sum up sales for a product ID)
+        pass
 ```
+
+### Stock Interpretation in `format_booking_slots`
+
+After `extract_fooevents_data` provides the `booking_data`, the `format_booking_slots` method is responsible for interpreting it to determine available stock for each date/slot. A key refinement addresses scenarios where FooEvents might store stock in multiple ways for the same date:
+*   **Priority for Override Stock**: When processing a specific date (`date_id`) within a slot's data (`slot_data`):
+    1.  The system first checks if an "override" stock field exists directly within `slot_data` matching the pattern `f"{date_id}_stock"` (e.g., `ykgzuyosxegmwqyuospt_stock`).
+    2.  If this field is found, its value is considered the authoritative `stock_from_booking_options` for that date.
+    3.  If not found, the system falls back to using the stock value nested within the `add_date` structure (i.e., `slot_data['add_date'][date_id]['stock']`).
+*   **Rationale**: This ensures that if FooEvents provides a more specific, potentially overriding stock value at the slot-date level (like `ykgzuyosxegmwqyuospt_stock: "0"`), it takes precedence over a more general nested stock value. This aligns with observed behavior where the flatter `DATEID_stock` field reflects the true availability seen in the WordPress admin for certain complex booking products.
+*   The `stock_from_booking_options` (derived using this priority) is then used by `_get_accurate_capacity_data` to calculate final `available`, `total_capacity`, and `tickets_sold` figures.
 
 ### Cache Management Strategy
 

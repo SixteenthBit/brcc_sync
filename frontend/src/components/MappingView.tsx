@@ -107,19 +107,20 @@ const MappingView: React.FC<MappingViewProps> = ({ onSendToCompare }) => {
     }
   };
 
-  const handleSendToCompare = async (mappingId: string) => {
+  const handleSendToCompare = (mappingId: string) => {
     try {
-      const response = await api.sendMappingToCompare(mappingId);
-      onSendToCompare(mappingId, response.data);
+      // Call onSendToCompare immediately without fetching data here
+      onSendToCompare(mappingId);
       setAlert({
         type: 'success',
-        message: 'Mapping group sent to comparison view'
+        message: 'Navigating to comparison view...'
       });
     } catch (error) {
-      console.error('Failed to send to compare:', error);
+      // This catch block handles synchronous errors from onSendToCompare or setAlert
+      console.error('Failed to initiate navigation to compare view:', error);
       setAlert({
         type: 'error',
-        message: error instanceof ApiError ? error.message : 'Failed to send mapping to comparison'
+        message: error instanceof Error ? error.message : 'Failed to navigate to comparison view'
       });
     }
   };

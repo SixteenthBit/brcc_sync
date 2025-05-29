@@ -66,68 +66,36 @@ frontend/src/
 - All components → `api.ts` (Backend communication)
 - Components → Individual CSS files (Styling)
 
-## 🎯 FooEvents Detection Algorithm (Production-Ready)
+## 🎯 FooEvents Data Extraction and Product Type Determination
 
 ### The Core Challenge
 
-The system must automatically determine whether a WooCommerce product should use:
-1. **WooCommerce native inventory** (`stock_quantity` field)
-2. **FooEvents booking metadata** (complex nested JSON structures)
+The system must accurately extract FooEvents data and determine if a product is a "complex booking" (multi-slot/date, using `fooevents_bookings_options_serialized` (FBOS) for its primary structure) or a "single/synthetic event" (which might use WooCommerce native inventory, simpler event flags, or a synthetic FBOS structure). This distinction is crucial for correct inventory display and management.
 
-**Critical Importance**: Wrong detection leads to database corruption, which causes website downtime and lost ticket sales.
+**Critical Importance**: Incorrect data extraction or type determination leads to inaccurate inventory display and potential mismanagement if update operations were based on wrong assumptions.
 
-### Detection Algorithm (Multi-Layer Validation)
+### Data Extraction and Detection Logic in `extract_fooevents_data`
 
-```python
-def _is_real_bookings_product(self, product_data: Dict[str, Any]) -> bool:
-    """
-    Multi-layer detection algorithm with fallback mechanisms
-    """
-    product_id = product_data.get('id')
-    
-    # LAYER 1: WooCommerce Stock Management Check
-    # If manage_stock=True, this is likely a normal FooEvents product
-    if product_data.get('manage_stock') and product_data.get('stock_quantity') is not None:
-        return False  # Use WooCommerce inventory
-    
-    # LAYER 2: Booking Metadata Analysis
-    for meta in product_data.get('meta_data', []):
-        if meta.get('key') == 'fooevents_bookings_options_serialized':
-            value = meta.get('value')
-            if value:
-                try:
-                    booking_data = json.loads(value) if isinstance(value, str) else value
-                    
-                    # LAYER 3: Synthetic Pattern Detection
-                    # Check for synthetic booking data (single events)
-                    synthetic_patterns = [
-                        f"event_{product_id}",  # Slot key pattern
-                        f"date_{product_id}"    # Date key pattern
-                    ]
-                    
-                    for slot_key, slot_data in booking_data.items():
-                        if slot_key in synthetic_patterns:
-                            return False  # Synthetic = Normal FooEvents
-                        
-                        # LAYER 4: Real Booking Structure Detection
-                        if isinstance(slot_data, dict):
-                            # Check for nested add_date structure (real bookings)
-                            for date_key, date_data in slot_data.items():
-                                if date_key.startswith('add_date') and isinstance(date_data, dict):
-                                    return True  # Real FooEvents Bookings
-                            
-                            # Check for flat structure with real date keys
-                            if any(key.startswith('date_') and not key.startswith(f'date_{product_id}') 
-                                  for key in slot_data.keys()):
-                                return True  # Real FooEvents Bookings
-                
-                except (json.JSONDecodeError, TypeError):
-                    pass
-    
-    # LAYER 5: Fallback Safety
-    # Default to FooEvents Bookings for safety (prevents inventory corruption)
-    return True
-```
+The `extract_fooevents_data` method in `woocommerce.py` is responsible for this. Its logic prioritizes as follows:
+
+1.  **Attempt to Parse `fooevents_bookings_options_serialized` (FBOS):**
+    *   If FBOS meta field exists and contains a value, it's parsed.
+    *   **Complex Booking Check**: If the parsed `booking_data_parsed` is determined to be "complex" (e.g., multiple top-level slot keys, or a single non-synthetic slot key containing multiple dates), then `booking_data_parsed` is returned directly. This raw data is then passed to `format_booking_slots` for detailed interpretation.
+    *   If FBOS is parsed but not deemed complex, it's stored for a later synthetic pattern check.
+    *   Parsing errors are logged, and the process moves to fallback checks.
+
+2.  **Fallback to WooCommerce Stock Management:**
+    *   If the product has `manage_stock: true` and a non-null `stock_quantity`, it's treated as a single event. Synthetic booking data is generated using `stock_quantity`.
+
+3.  **Fallback to `WooCommerceEventsEvent` Flag:**
+    *   If the `WooCommerceEventsEvent` meta field is explicitly set to `'Event'`, it's treated as a single event. Synthetic booking data is generated (stock is derived or defaulted by the helper).
+
+4.  **Fallback to Synthetic Pattern in FBOS:**
+    *   If FBOS was parsed successfully in step 1 but wasn't complex, it's checked here. If it matches a known synthetic pattern (e.g., a single slot key like `event_{product_id}`), synthetic booking data is generated using the content of this FBOS for stock information.
+
+5.  **No Definitive Data:** If none of the above conditions yield usable booking data, `None` is returned.
+
+The `_is_real_bookings_product` method is still used by inventory update functions (`increment_woocommerce_inventory`, etc.) to decide whether to update WooCommerce `stock_quantity` or the FooEvents booking metadata. It uses a multi-layer validation including `manage_stock`, `WooCommerceEventsEvent` flags, and analysis of the FBOS structure (synthetic patterns, nested `add_date`, flat structures) to make this determination for update operations.
 
 ### Product Type Examples
 
@@ -252,60 +220,52 @@ class WordPressDB:
 
 ## 🔄 Inventory Management Implementation
 
-### WooCommerce Inventory Updates
+### Stock Data Interpretation in `format_booking_slots`
+
+The `format_booking_slots` method takes the `booking_data` (as returned by `extract_fooevents_data`) and structures it for the API response. A key aspect is how it determines the `stock_from_booking_options` for each specific date within a slot, which then informs the `available`, `total_capacity`, and `tickets_sold` fields.
+
+*   **Priority for Override Stock**: When processing a date (identified by `date_id`) within a slot's data (`slot_data`):
+    1.  The method first checks if an "override" stock field exists directly within `slot_data` using the pattern `f"{date_id}_stock"` (e.g., `ykgzuyosxegmwqyuospt_stock` for a date ID `ykgzuyosxegmwqyuospt`).
+    2.  If this field is found and has a value, this value is used as the `stock_from_booking_options_str`.
+    3.  If this field is not found, the method falls back to using the stock value typically found nested within the `add_date` structure (i.e., `slot_data['add_date'][date_id]['stock']`).
+*   **Rationale**: This prioritization ensures that if FooEvents provides a specific stock value at the slot-date level (like `ykgzuyosxegmwqyuospt_stock: "0"`), it takes precedence. This is crucial for cases where this flatter structure holds the authoritative stock figure, as observed in some complex booking products.
+*   The determined `stock_from_booking_options` is then passed to `_get_accurate_capacity_data`, which fetches `db_tickets_sold`. The final `available` count is `stock_from_booking_options`, and `total_capacity` is `stock_from_booking_options + db_tickets_sold`.
+
+### WooCommerce Inventory Updates (Increment/Decrement/Set)
+
+The methods `increment_woocommerce_inventory`, `decrement_woocommerce_inventory`, and `set_woocommerce_inventory` handle the actual modification of stock values.
+
+*   They first call `extract_fooevents_data` to get the current booking structure.
+*   Then, `_is_real_bookings_product` determines if the update should target WooCommerce's main `stock_quantity` (for single/synthetic events) or the FooEvents booking metadata (for complex bookings).
+*   **For Complex Bookings**:
+    *   These methods navigate the `booking_data` (obtained from `extract_fooevents_data`) to find the specific `date_id` within the `slot_id`.
+    *   They primarily read and update the `stock` value found within the nested `add_date[date_id].stock` field or the `slot_data[f"{date_id}_stock"]` field if it's a flat structure recognized by these update functions.
+    *   The entire modified `booking_data` object is then saved back using `_update_product_booking_data`, which serializes it to the `fooevents_bookings_options_serialized` meta field.
+*   **Important Note**: The consistency between how `format_booking_slots` reads stock and how the update functions modify it is key. The recent changes to `format_booking_slots` aim to better align its reading logic with potentially authoritative override stock fields like `DATEID_stock`. The update functions also need to ensure they are targeting the same authoritative field for modifications. The current implementation of update functions primarily targets the nested `add_date[date_id].stock` or the `slot_data[f"{DATEID}_stock"]` for flat structures. If an override like `slot_data[DATEID_stock]` is the true source of truth and is *not* the one being modified by update functions, discrepancies after refresh (which re-reads via `format_booking_slots`) can occur. *Further investigation might be needed to ensure update functions also respect the `DATEID_stock` override if present.*
 
 ```python
-def increment_woocommerce_inventory(self, product_id: int, slot: str, date: str) -> Dict[str, Any]:
-    """
-    Increment inventory with product type detection
-    """
-    product_data = await self.get_product_data(product_id)
+# Simplified conceptual flow for incrementing booking metadata
+async def _increment_booking_metadata(self, product_id: int, slot_id: str, date_id: str) -> Dict[str, Any]:
+    product_data = await self.get_product_data(product_id) # Raw product data
+    booking_data = self.extract_fooevents_data(product_data) # Get booking data structure
     
-    if self._is_real_bookings_product(product_data):
-        # FooEvents Bookings: Update booking metadata
-        return self._increment_booking_metadata(product_id, slot, date)
-    else:
-        # Normal FooEvents: Update WooCommerce stock
-        return self._increment_woocommerce_stock(product_id)
-
-def _increment_woocommerce_stock(self, product_id: int) -> Dict[str, Any]:
-    """
-    Update WooCommerce stock_quantity field
-    """
-    product = self.wc_api_request(f"products/{product_id}")
-    current_stock = product.get('stock_quantity', 0)
-    new_stock = current_stock + 1
+    slot_data = booking_data[slot_id]
     
-    return self.wc_api_request(
-        f"products/{product_id}",
-        method='PUT',
-        data={'stock_quantity': new_stock},
-        auth_in_url=True
-    )
-
-def _increment_booking_metadata(self, product_id: int, slot: str, date: str) -> Dict[str, Any]:
-    """
-    Update FooEvents booking metadata with JSON safety
-    """
-    product_data = await self.get_product_data(product_id)
-    booking_data = self._get_booking_data(product_data)
+    # Logic to find and increment the correct stock field (nested or flat DATEID_stock)
+    # This is where the authoritative stock field must be identified and modified
+    # For example, if slot_data.get(f"{date_id}_stock") is the authority:
+    #   current_stock_str = slot_data.get(f"{date_id}_stock", slot_data['add_date'][date_id].get('stock', '0'))
+    # else:
+    #   current_stock_str = slot_data['add_date'][date_id].get('stock', '0')
+    # ... convert to int, increment, convert back to str, update booking_data ...
     
-    # Navigate nested/flat structure and increment
-    if slot in booking_data:
-        slot_data = booking_data[slot]
-        date_key = self._find_date_key(slot_data, date)
-        
-        if date_key:
-            if isinstance(slot_data[date_key], dict):
-                # Nested structure
-                current_stock = int(slot_data[date_key].get('stock', 0))
-                slot_data[date_key]['stock'] = str(current_stock + 1)
-            else:
-                # Flat structure
-                current_stock = int(slot_data.get(f"{date_key}_stock", 0))
-                slot_data[f"{date_key}_stock"] = str(current_stock + 1)
-    
-    return self._update_product_booking_data(product_id, booking_data)
+    # Example for nested:
+    if 'add_date' in slot_data and date_id in slot_data['add_date']:
+        current_stock = int(slot_data['add_date'][date_id].get('stock', 0))
+        slot_data['add_date'][date_id]['stock'] = str(current_stock + 1)
+    # Add similar logic for flat DATEID_stock if it's the authoritative one to modify
+            
+    return await self._update_product_booking_data(product_id, booking_data)
 ```
 
 ### Frontend Integration

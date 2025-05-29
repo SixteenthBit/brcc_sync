@@ -226,11 +226,28 @@ export interface UpdateMappingRequest {
   is_active?: boolean;
 }
 
+// Interface for the individual WooCommerce items in the comparison group
+export interface WooCommerceCombination {
+  product_id: number;
+  product_name: string;
+  slot_id: string;
+  slot_label: string;
+  slot_time: string;
+  date_id: string;
+  date: string;
+  stock: number | string;
+  available: number | string;
+  total_capacity: number | string;
+  tickets_sold: number | string;
+  price?: string;
+  product_price?: string; // Fallback if price not directly on combination
+}
+
 export interface ComparisonGroupData {
   mapping_id: string;
   mapping_name: string;
-  woocommerce_product: any;
-  eventbrite_series: any[];
+  woocommerce_combinations: WooCommerceCombination[]; // Changed from woocommerce_product
+  eventbrite_series: EventSeries[]; // Use existing EventSeries type
   comparison_ready: boolean;
 }
 
