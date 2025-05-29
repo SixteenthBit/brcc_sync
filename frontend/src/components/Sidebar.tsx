@@ -51,12 +51,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       description: 'Compare selected events',
       badge: selectedEvents.length > 0 ? selectedEvents.length : undefined
     },
-    {
-      id: 'manage' as ViewMode,
-      label: 'Capacity',
-      icon: '🎯',
-      description: 'Manage event capacity'
-    }
   ];
 
   return (

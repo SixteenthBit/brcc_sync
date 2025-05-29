@@ -421,7 +421,7 @@ async def increment_woocommerce_inventory(request: WooCommerceInventoryRequest):
         
         return CapacityResponse(
             success=True,
-            message=f"Successfully incremented inventory from {result['old_stock']} to {result['new_stock']}",
+            message=f"Successfully incremented inventory from {result.get('old_stock_available', 'N/A')} to {result.get('new_stock_available', 'N/A')}",
             data=result
         )
     except WooCommerceAPIError as e:
@@ -442,7 +442,7 @@ async def decrement_woocommerce_inventory(request: WooCommerceInventoryRequest):
         
         return CapacityResponse(
             success=True,
-            message=f"Successfully decremented inventory from {result['old_stock']} to {result['new_stock']}",
+            message=f"Successfully decremented inventory from {result.get('old_stock_available', 'N/A')} to {result.get('new_stock_available', 'N/A')}",
             data=result
         )
     except WooCommerceAPIError as e:

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import type { ViewMode, SelectedEvent } from '../App';
 import SeriesViewer from './SeriesViewer';
 import WooCommerceViewer from './WooCommerceViewer';
-import CapacityManager from './CapacityManager';
 import './EventManager.css';
 
 interface EventManagerProps {
@@ -94,34 +93,11 @@ const EventManager: React.FC<EventManagerProps> = ({
                 >
                   Compare Selected
                 </button>
-                <button 
-                  className="btn btn-primary"
-                  onClick={() => onNavigate('manage')}
-                  disabled={!selectedEventId}
-                >
-                  Manage Capacity
-                </button>
               </div>
             </div>
 
             <div className="eventbrite-layout">
-              {selectedEventId && (
-                <div className="capacity-section">
-                  <div className="section-card">
-                    <div className="card-header">
-                      <h2 className="card-title">Quick Capacity Control</h2>
-                    </div>
-                    <div className="card-body">
-                      <CapacityManager 
-                        selectedEventId={selectedEventId}
-                        selectedWooCommerceDate={null}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              <div className="series-section">
+              <div className="series-section full-width">
                 <SeriesViewer 
                   onOccurrenceSelect={handleOccurrenceSelect} 
                   initialCollapsed={false}
@@ -183,35 +159,6 @@ const EventManager: React.FC<EventManagerProps> = ({
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        );
-
-      case 'manage':
-        return (
-          <div className="event-manager-content">
-            <div className="page-header">
-              <div className="header-content">
-                <h1>🎯 Capacity Management</h1>
-                <p>Direct capacity control with increment and decrement tools</p>
-              </div>
-              <div className="header-actions">
-                <button 
-                  className="btn btn-outline"
-                  onClick={() => onNavigate('eventbrite')}
-                >
-                  Select Event
-                </button>
-              </div>
-            </div>
-
-            <div className="management-layout">
-              <div className="capacity-manager-section">
-                <CapacityManager 
-                  selectedEventId={selectedEventId}
-                  selectedWooCommerceDate={selectedWooCommerceDate}
-                />
-              </div>
             </div>
           </div>
         );

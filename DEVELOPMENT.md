@@ -55,7 +55,6 @@ frontend/src/
 │   ├── Dashboard.tsx      # System status and overview
 │   ├── Sidebar.tsx        # Navigation sidebar
 │   ├── ComparisonView.tsx # Event comparison interface
-│   ├── CapacityManager.tsx # Inventory management controls
 │   ├── SeriesViewer.tsx   # Eventbrite event browser
 │   └── WooCommerceViewer.tsx # WooCommerce product browser
 └── [component].css        # Component-specific styles

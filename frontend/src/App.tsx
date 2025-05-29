@@ -16,7 +16,7 @@ export interface SelectedEvent {
   details?: any;
 }
 
-export type ViewMode = 'dashboard' | 'comparison' | 'eventbrite' | 'woocommerce' | 'manage' | 'mapping';
+export type ViewMode = 'dashboard' | 'comparison' | 'eventbrite' | 'woocommerce' | 'mapping';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
@@ -164,9 +164,8 @@ function App() {
         );
       case 'eventbrite':
       case 'woocommerce':
-      case 'manage':
         return (
-          <EventManager 
+          <EventManager
             mode={currentView}
             selectedEvents={selectedEvents}
             onEventSelect={handleEventSelect}

@@ -243,6 +243,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
           const productFromMasterList = dataState.woocommerceProducts.find(p => p.product_id === currentIds.currentProductId);
           const slotFromMasterList = productFromMasterList?.slots.find(s => s.slot_id === currentIds.currentSlotId);
           const dateFromMasterList = slotFromMasterList?.dates.find(d => d.date_id === currentIds.currentDateId);
+          console.log(`[loadEventDetails] WC Date for ${key} (from dataState):`, dateFromMasterList ? JSON.parse(JSON.stringify(dateFromMasterList)) : 'dateFromMasterList is null/undefined');
 
           if (productFromMasterList && slotFromMasterList && dateFromMasterList) {
             newDetails[key] = {
@@ -396,13 +397,15 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                   ...s,
                   dates: s.dates.map(d => {
                     if (d.date_id === dateId) {
-                      return {
+                      const updatedDate = {
                         ...d,
-                        available: updatedInventory.new_stock,
-                        total_capacity: updatedInventory.total_capacity,
-                        tickets_sold: updatedInventory.tickets_sold,
-                        stock: updatedInventory.new_stock 
+                        available: updatedInventory.available,
+                        total_capacity: updatedInventory.new_capacity,
+                        tickets_sold: updatedInventory.quantity_sold,
+                        stock: updatedInventory.available
                       };
+                      console.log(`[updateWooCommerceMasterState] Updated WC Date object for ${productId}-${slotId}-${dateId} in dataState.woocommerceProducts:`, updatedDate ? JSON.parse(JSON.stringify(updatedDate)) : 'updatedDate is null/undefined');
+                      return updatedDate;
                     }
                     return d;
                   }),
@@ -427,17 +430,20 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
     setEventDetails(prev => ({ ...prev, [eventKey]: { ...prev[eventKey], inventoryLoading: true, inventoryError: undefined } }));
     try {
       const result = await api.incrementWooCommerceInventory(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId);
-      const updatedInventoryData = result.data as any; 
-      
-      updateWooCommerceMasterState(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, updatedInventoryData);
+      console.log(`[handleInventoryIncrement] API Response (result.data) for ${eventKey}:`, result && result.data ? JSON.parse(JSON.stringify(result.data)) : 'API result or result.data is null/undefined');
+      const updatedInventoryData = result.data;
+      console.log(`[handleInventoryIncrement] Data passed to updateWooCommerceMasterState for ${eventKey}:`, updatedInventoryData ? JSON.parse(JSON.stringify(updatedInventoryData)) : 'updatedInventoryData is null/undefined');
+      if (updatedInventoryData) { // Ensure data exists before updating state
+        updateWooCommerceMasterState(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, updatedInventoryData);
+      }
 
       setEventDetails(prev => ({
         ...prev,
         [eventKey]: {
           ...prev[eventKey],
-          available: updatedInventoryData.new_stock,
-          capacity: updatedInventoryData.total_capacity,
-          sold: updatedInventoryData.tickets_sold,
+          available: updatedInventoryData.available,
+          capacity: updatedInventoryData.new_capacity,
+          sold: updatedInventoryData.quantity_sold,
           inventoryLoading: false,
           lastUpdate: new Date().toISOString()
         }
@@ -456,17 +462,20 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
     setEventDetails(prev => ({ ...prev, [eventKey]: { ...prev[eventKey], inventoryLoading: true, inventoryError: undefined } }));
     try {
       const result = await api.decrementWooCommerceInventory(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId);
-      const updatedInventoryData = result.data as any; 
-
-      updateWooCommerceMasterState(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, updatedInventoryData);
+      console.log(`[handleInventoryDecrement] API Response (result.data) for ${eventKey}:`, result && result.data ? JSON.parse(JSON.stringify(result.data)) : 'API result or result.data is null/undefined');
+      const updatedInventoryData = result.data;
+      console.log(`[handleInventoryDecrement] Data passed to updateWooCommerceMasterState for ${eventKey}:`, updatedInventoryData ? JSON.parse(JSON.stringify(updatedInventoryData)) : 'updatedInventoryData is null/undefined');
+      if (updatedInventoryData) { // Ensure data exists before updating state
+        updateWooCommerceMasterState(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, updatedInventoryData);
+      }
       
       setEventDetails(prev => ({
         ...prev,
         [eventKey]: {
           ...prev[eventKey],
-          available: updatedInventoryData.new_stock,
-          capacity: updatedInventoryData.total_capacity,
-          sold: updatedInventoryData.tickets_sold,
+          available: updatedInventoryData.available,
+          capacity: updatedInventoryData.new_capacity,
+          sold: updatedInventoryData.quantity_sold,
           inventoryLoading: false,
           lastUpdate: new Date().toISOString()
         }
@@ -504,17 +513,20 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
 
     try {
       const result = await api.setWooCommerceInventory(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, newStock);
-      const updatedInventoryData = result.data as any; 
-
-      updateWooCommerceMasterState(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, updatedInventoryData);
+      console.log(`[handleSetWooCommerce] API Response (result.data) for ${eventKey}:`, result && result.data ? JSON.parse(JSON.stringify(result.data)) : 'API result or result.data is null/undefined');
+      const updatedInventoryData = result.data;
+      console.log(`[handleSetWooCommerce] Data passed to updateWooCommerceMasterState for ${eventKey}:`, updatedInventoryData ? JSON.parse(JSON.stringify(updatedInventoryData)) : 'updatedInventoryData is null/undefined');
+      if (updatedInventoryData) { // Ensure data exists before updating state
+        updateWooCommerceMasterState(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, updatedInventoryData);
+      }
 
       setEventDetails(prev => ({
         ...prev,
         [eventKey]: {
           ...prev[eventKey],
-          available: updatedInventoryData.new_stock,
-          capacity: updatedInventoryData.total_capacity,
-          sold: updatedInventoryData.tickets_sold,
+          available: updatedInventoryData.available,
+          capacity: updatedInventoryData.new_capacity,
+          sold: updatedInventoryData.quantity_sold,
           inventoryLoading: false,
           lastUpdate: new Date().toISOString()
         }
@@ -653,32 +665,52 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
   const handleSetEventbrite = async (eventKey: string, currentEventDetails: EventDetails) => {
     const value = setInputs[eventKey];
     if (!value) return;
-    const newCapacity = parseInt(value, 10);
-    if (isNaN(newCapacity) || newCapacity < 0) {
-      setSetErrors(prev => ({ ...prev, [eventKey]: 'Enter a non-negative number' }));
+
+    // User input now represents desired AVAILABLE tickets
+    const desiredAvailableTickets = parseInt(value, 10);
+
+    if (isNaN(desiredAvailableTickets) || desiredAvailableTickets < 0) {
+      setSetErrors(prev => ({ ...prev, [eventKey]: 'Enter a non-negative number for available tickets' }));
       return;
     }
+
     const ticketsSold = typeof currentEventDetails.sold === 'number' ? currentEventDetails.sold : 0;
-    if (newCapacity < ticketsSold) {
-      setSetErrors(prev => ({ ...prev, [eventKey]: `Cannot set below tickets sold (${ticketsSold})` }));
-      return;
+    
+    // New total capacity calculation
+    const newTotalCapacity = desiredAvailableTickets + ticketsSold;
+
+    // Validate if the calculated newTotalCapacity is less than ticketsSold
+    // (This case should ideally not happen if desiredAvailableTickets is >= 0, but good for safety)
+    if (newTotalCapacity < ticketsSold) {
+        setSetErrors(prev => ({ ...prev, [eventKey]: `Calculated capacity (${newTotalCapacity}) is less than tickets sold (${ticketsSold}).` }));
+        return;
     }
+
     setEventDetails(prev => ({ ...prev, [eventKey]: { ...prev[eventKey], capacityLoading: true, capacityError: undefined } }));
     setSetErrors(prev => ({ ...prev, [eventKey]: '' }));
+
     try {
-      const result = await api.setEventbriteCapacity(currentEventDetails.occurrence?.occurrence_id!, currentEventDetails.ticketClass?.id!, newCapacity);
+      // Call API to set the NEW TOTAL capacity
+      const result = await api.setEventbriteCapacity(
+        currentEventDetails.occurrence?.occurrence_id!,
+        currentEventDetails.ticketClass?.id!,
+        newTotalCapacity // Pass the calculated new total capacity
+      );
+
+      // Update UI with new values from API response
+      // The API response (result.data) should reflect the new_capacity, quantity_sold, and available
       setEventDetails(prev => ({
         ...prev,
         [eventKey]: {
           ...prev[eventKey],
-          capacity: (result.data as any).new_capacity,
-          sold: (result.data as any).quantity_sold,
-          available: (result.data as any).available,
+          capacity: (result.data as any).new_capacity, // This should be our newTotalCapacity
+          sold: (result.data as any).quantity_sold,   // Should remain the same
+          available: (result.data as any).available, // This should be our desiredAvailableTickets
           capacityLoading: false,
           lastUpdate: new Date().toISOString()
         }
       }));
-      setSetInputs(prev => ({ ...prev, [eventKey]: '' }));
+      setSetInputs(prev => ({ ...prev, [eventKey]: '' })); // Clear input after successful set
     } catch (err) {
       setEventDetails(prev => ({ ...prev, [eventKey]: { ...prev[eventKey], capacityLoading: false, capacityError: err instanceof ApiError ? err.message : 'Failed to set capacity' } }));
       setSetErrors(prev => ({ ...prev, [eventKey]: err instanceof ApiError ? err.message : 'Failed to set capacity' }));
@@ -713,23 +745,27 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                 if (refreshedSlotData) {
                     const refreshedDateData = refreshedSlotData.dates?.find(d => d.date_id === currentIds.currentDateId);
                     if (refreshedDateData) {
-                        const inventoryPayload = {
-                            new_stock: refreshedDateData.available,
-                            total_capacity: Number(refreshedDateData.total_capacity),
-                            tickets_sold: Number(refreshedDateData.tickets_sold)
+                        // Construct a payload similar to CapacityUpdateData for consistency
+                        const payloadForStateUpdate = {
+                            available: refreshedDateData.available,
+                            new_capacity: typeof refreshedDateData.total_capacity === 'string' ? undefined : Number(refreshedDateData.total_capacity),
+                            quantity_sold: typeof refreshedDateData.tickets_sold === 'string' ? undefined : Number(refreshedDateData.tickets_sold),
+                            // old_capacity is not critical here for updateWooCommerceMasterState
+                            event_id: String(currentIds.currentProductId)
                         };
-                        updateWooCommerceMasterState(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, inventoryPayload);
+                        console.log(`[refreshEventDetails] Payload for updateWooCommerceMasterState for ${key}:`, JSON.parse(JSON.stringify(payloadForStateUpdate)));
+                        updateWooCommerceMasterState(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, payloadForStateUpdate);
                         
                         setEventDetails(prev => ({
                             ...prev,
                             [key]: {
-                                ...prev[key], 
-                                product: refreshedProductData, 
-                                slot: refreshedSlotData,     
-                                date: refreshedDateData,     
-                                available: inventoryPayload.new_stock,
-                                capacity: inventoryPayload.total_capacity,
-                                sold: inventoryPayload.tickets_sold,
+                                ...prev[key],
+                                product: refreshedProductData,
+                                slot: refreshedSlotData,
+                                date: refreshedDateData,
+                                available: payloadForStateUpdate.available,
+                                capacity: payloadForStateUpdate.new_capacity,
+                                sold: payloadForStateUpdate.quantity_sold,
                                 price: refreshedProductData.product_price, 
                                 startDate: refreshedDateData.date, 
                                 status: 'loaded',

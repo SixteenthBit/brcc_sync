@@ -26,7 +26,7 @@ This application provides unified management for two distinct event platforms:
 - 🔄 **Manual Cache Control**: User-controlled data refresh (no auto-refresh)
 
 ### Eventbrite Integration
-- 🎫 **Capacity Management**: Real-time ticket class capacity viewing and modification
+- 🎫 **Capacity Adjustment**: Ticket class capacity viewing and modification (via Comparison View for Eventbrite)
 - 📊 **Series Management**: Browse all event series with on-sale events
 - ➕ **Increment/Decrement**: Precise capacity adjustments by 1 ticket
 - 🔄 **Live Status**: Real-time updates with comprehensive error handling
@@ -121,7 +121,6 @@ brcc_sync/
 │   │   │   ├── Dashboard.tsx         # System status dashboard
 │   │   │   ├── Sidebar.tsx           # Navigation sidebar
 │   │   │   ├── ComparisonView.tsx    # Event comparison interface
-│   │   │   ├── CapacityManager.tsx   # Unified capacity management
 │   │   │   ├── SeriesViewer.tsx      # Eventbrite series browser
 │   │   │   └── WooCommerceViewer.tsx # WooCommerce events browser
 │   │   ├── App.tsx            # Root component
@@ -277,7 +276,7 @@ The system handles complex scenarios:
    - Cross-platform selection (mix Eventbrite + WooCommerce)
 
 3. **Capacity Management**:
-   - Use +/- buttons for precise inventory adjustments
+   - Use +/- buttons within the Comparison View for precise Eventbrite inventory adjustments
    - Real-time validation and error feedback
    - Immediate UI updates with backend confirmation
 

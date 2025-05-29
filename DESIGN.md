@@ -300,7 +300,6 @@ async def safe_inventory_update(product_id: int, slot: str, date: str, action: s
 | **App.tsx** | State management and routing | • Global error boundary<br>• Fallback UI<br>• Recovery actions | • Sidebar navigation<br>• Responsive design<br>• Mobile support |
 | **Dashboard.tsx** | System overview and status | • API health checks<br>• Service status<br>• Error indicators | • Status cards<br>• Quick actions<br>• Selected events |
 | **ComparisonView.tsx** | Event comparison and analysis | • Per-event error states<br>• Loading indicators<br>• Retry options | • Side-by-side cards<br>• Capacity visualization<br>• Summary stats |
-| **Inventory Controls** | Capacity management | • Optimistic updates<br>• Rollback on error<br>• Validation feedback | • +/- buttons<br>• Real-time updates<br>• Clear feedback |
 
 ## 🎯 Windows PowerShell Development Architecture
 

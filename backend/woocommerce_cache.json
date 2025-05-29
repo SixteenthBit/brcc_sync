@@ -253,9 +253,9 @@
             {
               "date_id": "aelzklfmlftusebaxiqc",
               "date": "January 08, 2025",
-              "stock": 50,
-              "available": 50,
-              "total_capacity": 50,
+              "stock": 49,
+              "available": 49,
+              "total_capacity": 49,
               "tickets_sold": 0
             },
             {
@@ -878,7 +878,7 @@
       "product_id": 4060,
       "product_name": "Thursday Night at Backroom Comedy Club",
       "product_price": "22.50",
-      "total_sales": 164,
+      "total_sales": 173,
       "slots": [
         {
           "product_id": 4060,
@@ -1050,10 +1050,10 @@
             {
               "date_id": "apnjrjgwzksnubfaqpsm",
               "date": "May 29, 2025",
-              "stock": 49,
-              "available": 49,
+              "stock": 44,
+              "available": 44,
               "total_capacity": 51,
-              "tickets_sold": 2
+              "tickets_sold": 7
             },
             {
               "date_id": "vaqeejplguzjptnufssy",
@@ -1364,10 +1364,10 @@
             {
               "date_id": "fslcvipwvetamdnsudnp",
               "date": "May 29, 2025",
-              "stock": 55,
-              "available": 55,
+              "stock": 51,
+              "available": 51,
               "total_capacity": 55,
-              "tickets_sold": 0
+              "tickets_sold": 4
             },
             {
               "date_id": "wtulqrpwvbpzazeqxrcz",
@@ -1687,9 +1687,9 @@
             {
               "date_id": "xvamewdifbfzcpqkuqoa",
               "date": "May 30, 2025",
-              "stock": 51,
-              "available": 51,
-              "total_capacity": 55,
+              "stock": 12,
+              "available": 12,
+              "total_capacity": 16,
               "tickets_sold": 4
             },
             {
@@ -2332,9 +2332,9 @@
             {
               "date_id": "lfxgiohlklqysrsrqutu",
               "date": "June 07, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
+              "stock": 0,
+              "available": 0,
+              "total_capacity": 0,
               "tickets_sold": 0
             },
             {
@@ -2960,9 +2960,9 @@
             {
               "date_id": "cjlupmgisrvjvmvyyuur",
               "date": "June 07, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
+              "stock": 0,
+              "available": 0,
+              "total_capacity": 0,
               "tickets_sold": 0
             },
             {
@@ -4038,7 +4038,7 @@
       "product_id": 11192,
       "product_name": "Free Drink",
       "product_price": "30",
-      "total_sales": 81,
+      "total_sales": 83,
       "slots": [
         {
           "product_id": 11192,
@@ -4223,7 +4223,7 @@
       "product_id": 13918,
       "product_name": "Stef Dag @ Backroom Comedy Club | Limited Run",
       "product_price": "30",
-      "total_sales": 8,
+      "total_sales": 9,
       "slots": [
         {
           "product_id": 13918,
@@ -4235,9 +4235,9 @@
             {
               "date_id": "ykgzuyosxegmwqyuospt",
               "date": "May 30, 2025",
-              "stock": 26,
-              "available": 26,
-              "total_capacity": 28,
+              "stock": 0,
+              "available": 0,
+              "total_capacity": 2,
               "tickets_sold": 2
             },
             {
@@ -4261,10 +4261,10 @@
             {
               "date_id": "kgpnvlopyalibhcvkynp",
               "date": "May 30, 2025",
-              "stock": 28,
-              "available": 28,
+              "stock": 27,
+              "available": 27,
               "total_capacity": 30,
-              "tickets_sold": 2
+              "tickets_sold": 3
             },
             {
               "date_id": "cahmeyybcgfwrefiyvcl",
@@ -4631,6 +4631,6 @@
   "failed_count": 0,
   "total_slots": 33,
   "total_dates": 520,
-  "last_updated": "2025-05-29T08:32:58.800402+00:00",
+  "last_updated": "2025-05-29T22:05:19.724826+00:00",
   "cache_source": "api"
 }
