@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    target: 'es2020', // Updated to match TypeScript target and support modern syntax
+    target: 'es2019', // Updated to fix nullish coalescing operator compatibility issues
     minify: 'esbuild',
     sourcemap: false,
     rollupOptions: {
