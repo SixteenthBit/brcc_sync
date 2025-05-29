@@ -16,7 +16,7 @@ export interface SelectedEvent {
   details?: any;
 }
 
-export type ViewMode = 'dashboard' | 'comparison' | 'eventbrite' | 'woocommerce' | 'mapping';
+export type ViewMode = 'dashboard' | 'comparison' | 'eventbrite' | 'woocommerce' | 'mapping' | 'manage';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');

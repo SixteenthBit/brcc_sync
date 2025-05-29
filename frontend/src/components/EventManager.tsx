@@ -18,7 +18,6 @@ const EventManager: React.FC<EventManagerProps> = ({
   onNavigate
 }) => {
   // Legacy state for existing components
-  const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [selectedWooCommerceDate, setSelectedWooCommerceDate] = useState<{
     productId: number;
     slotId: string;
@@ -27,7 +26,6 @@ const EventManager: React.FC<EventManagerProps> = ({
 
   // Handle Eventbrite event selection
   const handleOccurrenceSelect = (eventId: string, occurrence?: any) => {
-    setSelectedEventId(eventId);
     setSelectedWooCommerceDate(null);
     
     // Also add to new selection system for comparison
@@ -48,7 +46,6 @@ const EventManager: React.FC<EventManagerProps> = ({
   // Handle WooCommerce date selection
   const handleWooCommerceDateSelect = (productId: number, slotId: string, dateId: string, eventData?: any) => {
     setSelectedWooCommerceDate({ productId, slotId, dateId });
-    setSelectedEventId('');
     
     // Also add to new selection system for comparison
     const event: SelectedEvent = {
