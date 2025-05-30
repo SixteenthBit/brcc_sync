@@ -224,6 +224,44 @@ class EventbriteClient:
             'event_id': event_id
         }
 
+    async def update_event_overall_capacity(self, event_id: str, new_capacity: int) -> Dict[str, Any]:
+        """
+        Updates the overall capacity of a specific event.
+        
+        Args:
+            event_id: The ID of the event to update
+            new_capacity: The new overall capacity to set
+            
+        Returns:
+            The API response data
+            
+        Raises:
+            EventbriteAPIError: If the API request fails
+        """
+        try:
+            url = f"{self.base_url}/events/{event_id}/" # Note: Endpoint for updating event itself
+            
+            payload = {
+                "event": {
+                    "capacity": new_capacity
+                }
+            }
+            
+            print(f"Attempting to update overall event capacity for Event ID {event_id} to {new_capacity}...")
+            
+            response = requests.post(url, json=payload, headers=self.headers) # POST to update
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            if 'error' in data:
+                raise EventbriteAPIError(f"Eventbrite API error while updating overall event capacity: {data['error'].get('error_description', 'Unknown error')}")
+            
+            return data
+            
+        except requests.RequestException as e:
+            raise EventbriteAPIError(f"Failed to update overall event capacity: {str(e)}")
+
     async def get_all_ticket_classes(self, event_id: str) -> Dict[str, Any]:
         """
         Gets all ticket classes for an event.

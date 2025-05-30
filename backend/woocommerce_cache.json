@@ -24,9 +24,9 @@
             {
               "date_id": "bxqldaufferkkahdptsc",
               "date": "June 09, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
+              "stock": 54,
+              "available": 54,
+              "total_capacity": 54,
               "tickets_sold": 0
             },
             {
@@ -261,9 +261,9 @@
             {
               "date_id": "kwpzojtwlbhyzsmqwmpe",
               "date": "January 15, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
+              "stock": 54,
+              "available": 54,
+              "total_capacity": 54,
               "tickets_sold": 0
             },
             {
@@ -413,9 +413,9 @@
             {
               "date_id": "qxcplamydpbpgzfztmvw",
               "date": "May 28, 2025",
-              "stock": 45,
-              "available": 45,
-              "total_capacity": 51,
+              "stock": 43,
+              "available": 43,
+              "total_capacity": 49,
               "tickets_sold": 6
             },
             {
@@ -878,7 +878,7 @@
       "product_id": 4060,
       "product_name": "Thursday Night at Backroom Comedy Club",
       "product_price": "22.50",
-      "total_sales": 162,
+      "total_sales": 173,
       "slots": [
         {
           "product_id": 4060,
@@ -890,9 +890,9 @@
             {
               "date_id": "lfdkbfynlpfaipxlmdva",
               "date": "January 09, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
+              "stock": 42,
+              "available": 42,
+              "total_capacity": 42,
               "tickets_sold": 0
             },
             {
@@ -1050,10 +1050,10 @@
             {
               "date_id": "apnjrjgwzksnubfaqpsm",
               "date": "May 29, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
+              "stock": 35,
+              "available": 35,
+              "total_capacity": 42,
+              "tickets_sold": 7
             },
             {
               "date_id": "vaqeejplguzjptnufssy",
@@ -1204,9 +1204,9 @@
             {
               "date_id": "kvvuqkxgmlvxyrdfixcl",
               "date": "January 09, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
+              "stock": 53,
+              "available": 53,
+              "total_capacity": 53,
               "tickets_sold": 0
             },
             {
@@ -1356,18 +1356,18 @@
             {
               "date_id": "fvsokncxwyxfeszvhuxo",
               "date": "May 22, 2025",
-              "stock": 53,
-              "available": 53,
-              "total_capacity": 55,
+              "stock": 48,
+              "available": 48,
+              "total_capacity": 50,
               "tickets_sold": 2
             },
             {
               "date_id": "fslcvipwvetamdnsudnp",
               "date": "May 29, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
+              "stock": 5,
+              "available": 5,
+              "total_capacity": 9,
+              "tickets_sold": 4
             },
             {
               "date_id": "wtulqrpwvbpzazeqxrcz",
@@ -1687,9 +1687,9 @@
             {
               "date_id": "xvamewdifbfzcpqkuqoa",
               "date": "May 30, 2025",
-              "stock": 51,
-              "available": 51,
-              "total_capacity": 55,
+              "stock": 11,
+              "available": 11,
+              "total_capacity": 15,
               "tickets_sold": 4
             },
             {
@@ -2152,7 +2152,7 @@
       "product_id": 4154,
       "product_name": "Saturday Night at Backroom Comedy Club",
       "product_price": "24.35",
-      "total_sales": 476,
+      "total_sales": 483,
       "slots": [
         {
           "product_id": 4154,
@@ -2332,9 +2332,9 @@
             {
               "date_id": "lfxgiohlklqysrsrqutu",
               "date": "June 07, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
+              "stock": 0,
+              "available": 0,
+              "total_capacity": 0,
               "tickets_sold": 0
             },
             {
@@ -2638,9 +2638,9 @@
             {
               "date_id": "gslekepqbzedgwtzivjc",
               "date": "May 31, 2025",
-              "stock": 51,
-              "available": 51,
-              "total_capacity": 55,
+              "stock": 6,
+              "available": 6,
+              "total_capacity": 10,
               "tickets_sold": 4
             },
             {
@@ -2952,34 +2952,34 @@
             {
               "date_id": "inkxczkocisqufgxzlrs",
               "date": "May 31, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
+              "stock": 27,
+              "available": 27,
+              "total_capacity": 27,
               "tickets_sold": 0
             },
             {
               "date_id": "cjlupmgisrvjvmvyyuur",
               "date": "June 07, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
+              "stock": 0,
+              "available": 0,
+              "total_capacity": 0,
               "tickets_sold": 0
             },
             {
               "date_id": "agnkaetjnpgkbxrgydwl",
               "date": "June 14, 2025",
-              "stock": 55,
-              "available": 55,
+              "stock": 49,
+              "available": 49,
               "total_capacity": 55,
-              "tickets_sold": 0
+              "tickets_sold": 6
             },
             {
               "date_id": "zmtotgwtfktbyuhihcev",
               "date": "June 21, 2025",
-              "stock": 55,
-              "available": 55,
+              "stock": 54,
+              "available": 54,
               "total_capacity": 55,
-              "tickets_sold": 0
+              "tickets_sold": 1
             },
             {
               "date_id": "bhqcozovlipnobcwatma",
@@ -3103,7 +3103,7 @@
       "product_id": 4157,
       "product_name": "Sunday Night at Backroom Comedy Club",
       "product_price": "22.50",
-      "total_sales": 74,
+      "total_sales": 76,
       "slots": [
         {
           "product_id": 4157,
@@ -3307,10 +3307,10 @@
             {
               "date_id": "nhebktzumrxqzyipswrv",
               "date": "June 29, 2025",
-              "stock": 55,
-              "available": 55,
+              "stock": 53,
+              "available": 53,
               "total_capacity": 55,
-              "tickets_sold": 0
+              "tickets_sold": 2
             },
             {
               "date_id": "wknpdimrsksddjcnhwcp",
@@ -4038,156 +4038,192 @@
       "product_id": 11192,
       "product_name": "Free Drink",
       "product_price": "30",
-      "total_sales": 81,
+      "total_sales": 83,
       "slots": [
         {
           "product_id": 11192,
           "product_name": "Free Drink",
-          "slot_id": "event_11192",
-          "slot_label": "Free Drink Show",
-          "slot_time": "12:00 a.m.",
-          "dates": [
-            {
-              "date_id": "date_11192",
-              "date": "February 01, 2025",
-              "stock": 999,
-              "available": 999,
-              "total_capacity": 1083,
-              "tickets_sold": 84
-            }
-          ],
-          "total_dates": 1
-        }
-      ],
-      "slot_count": 1
-    },
-    {
-      "product_id": 37526,
-      "product_name": "Jordan Policicchio @ Backroom Comedy Club | Limited Run!",
-      "product_price": "24.76",
-      "total_sales": 0,
-      "slots": [
-        {
-          "product_id": 37526,
-          "product_name": "Jordan Policicchio @ Backroom Comedy Club | Limited Run!",
-          "slot_id": "xmkwfmcvbaysvrnagwpv",
-          "slot_label": "8pm Show",
-          "slot_time": "08:00 p.m.",
-          "dates": [
-            {
-              "date_id": "ykgzuyosxegmwqyuospt",
-              "date": "February 14, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            },
-            {
-              "date_id": "lwmolveojgrfnyuokkdq",
-              "date": "February 15, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            }
-          ],
-          "total_dates": 2
-        },
-        {
-          "product_id": 37526,
-          "product_name": "Jordan Policicchio @ Backroom Comedy Club | Limited Run!",
-          "slot_id": "knmrqrdtotdzsxzdyzou",
-          "slot_label": "10pm Show",
+          "slot_id": "vluyukinttwpvfzhzzko",
+          "slot_label": "February: 20-20 Show",
           "slot_time": "10:00 p.m.",
           "dates": [
             {
-              "date_id": "kgpnvlopyalibhcvkynp",
-              "date": "February 14, 2025",
+              "date_id": "rsdcernpmvjjvmozkdjh",
+              "date": "February 06, 2025",
               "stock": 55,
               "available": 55,
               "total_capacity": 55,
               "tickets_sold": 0
             },
             {
-              "date_id": "cahmeyybcgfwrefiyvcl",
-              "date": "February 15, 2025",
-              "stock": 55,
-              "available": 55,
-              "total_capacity": 55,
-              "tickets_sold": 0
-            }
-          ],
-          "total_dates": 2
-        }
-      ],
-      "slot_count": 2
-    },
-    {
-      "product_id": 37268,
-      "product_name": "Chris Robinson Headlines Backroom Comedy Club | Limited Edition",
-      "product_price": "29.97",
-      "total_sales": 0,
-      "slots": [
-        {
-          "product_id": 37268,
-          "product_name": "Chris Robinson Headlines Backroom Comedy Club | Limited Edition",
-          "slot_id": "xmkwfmcvbaysvrnagwpv",
-          "slot_label": "8pm Show",
-          "slot_time": "08:00 p.m.",
-          "dates": [
-            {
-              "date_id": "ykgzuyosxegmwqyuospt",
-              "date": "February 14, 2025",
+              "date_id": "jrviswbbwdewlnmaepus",
+              "date": "February 13, 2025",
               "stock": 55,
               "available": 55,
               "total_capacity": 55,
               "tickets_sold": 0
             },
             {
-              "date_id": "lwmolveojgrfnyuokkdq",
-              "date": "February 15, 2025",
+              "date_id": "rarawjtfsfwhkvbazabp",
+              "date": "February 20, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "keveaxvfaczxnwavxwoi",
+              "date": "February 27, 2025",
               "stock": 55,
               "available": 55,
               "total_capacity": 55,
               "tickets_sold": 0
             }
           ],
-          "total_dates": 2
+          "total_dates": 4
         },
         {
-          "product_id": 37268,
-          "product_name": "Chris Robinson Headlines Backroom Comedy Club | Limited Edition",
-          "slot_id": "knmrqrdtotdzsxzdyzou",
-          "slot_label": "10pm Show",
+          "product_id": 11192,
+          "product_name": "Free Drink",
+          "slot_id": "xqdrkgaclslfzrijrxli",
+          "slot_label": "March: 20-20 Show",
           "slot_time": "10:00 p.m.",
           "dates": [
             {
-              "date_id": "kgpnvlopyalibhcvkynp",
-              "date": "February 14, 2025",
+              "date_id": "aqqrywtfddubeqfslnpz",
+              "date": "March 06, 2025",
               "stock": 55,
               "available": 55,
               "total_capacity": 55,
               "tickets_sold": 0
             },
             {
-              "date_id": "cahmeyybcgfwrefiyvcl",
-              "date": "February 15, 2025",
+              "date_id": "exzioyfbqqovzarstoke",
+              "date": "March 13, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "doenmnynsvkahotpopgo",
+              "date": "March 20, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "agwoeilpkwlywdcuchdk",
+              "date": "March 27, 2025",
               "stock": 55,
               "available": 55,
               "total_capacity": 55,
               "tickets_sold": 0
             }
           ],
-          "total_dates": 2
+          "total_dates": 4
+        },
+        {
+          "product_id": 11192,
+          "product_name": "Free Drink",
+          "slot_id": "zrjlihusukwymdsutnhm",
+          "slot_label": "April: 20-20 Show",
+          "slot_time": "10:00 p.m.",
+          "dates": [
+            {
+              "date_id": "gtaamichykqafwtedijr",
+              "date": "April 03, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "cwhtsfnjjzajasktgwgh",
+              "date": "April 10, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "goowybyhijbwlnrerlwv",
+              "date": "April 17, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "ulbosdkochizjamjgjrq",
+              "date": "April 24, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            }
+          ],
+          "total_dates": 4
+        },
+        {
+          "product_id": 11192,
+          "product_name": "Free Drink",
+          "slot_id": "tkczhpvzmjikdhmorues",
+          "slot_label": "May: 20-20 Show",
+          "slot_time": "10:00 p.m.",
+          "dates": [
+            {
+              "date_id": "dwpasyuwpaklolvoxxui",
+              "date": "May 01, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "lfrsuqbphlxrzyukvdyd",
+              "date": "May 08, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "dzhkxvlaqtjfwkeqonne",
+              "date": "May 15, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "gmmvstcvzguappljqtnc",
+              "date": "May 22, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            },
+            {
+              "date_id": "seljwezavzppdcxllxgl",
+              "date": "May 29, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            }
+          ],
+          "total_dates": 5
         }
       ],
-      "slot_count": 2
+      "slot_count": 4
     },
     {
       "product_id": 13918,
       "product_name": "Stef Dag @ Backroom Comedy Club | Limited Run",
       "product_price": "30",
-      "total_sales": 2,
+      "total_sales": 9,
       "slots": [
         {
           "product_id": 13918,
@@ -4199,9 +4235,9 @@
             {
               "date_id": "ykgzuyosxegmwqyuospt",
               "date": "May 30, 2025",
-              "stock": 26,
-              "available": 26,
-              "total_capacity": 28,
+              "stock": 0,
+              "available": 0,
+              "total_capacity": 2,
               "tickets_sold": 2
             },
             {
@@ -4225,18 +4261,18 @@
             {
               "date_id": "kgpnvlopyalibhcvkynp",
               "date": "May 30, 2025",
-              "stock": 30,
-              "available": 30,
+              "stock": 27,
+              "available": 27,
               "total_capacity": 30,
-              "tickets_sold": 0
+              "tickets_sold": 3
             },
             {
               "date_id": "cahmeyybcgfwrefiyvcl",
               "date": "May 31, 2025",
-              "stock": 38,
-              "available": 38,
+              "stock": 34,
+              "available": 34,
               "total_capacity": 38,
-              "tickets_sold": 0
+              "tickets_sold": 4
             }
           ],
           "total_dates": 2
@@ -4262,8 +4298,8 @@
               "date": "June 06, 2025",
               "stock": 53,
               "available": 53,
-              "total_capacity": 55,
-              "tickets_sold": 2
+              "total_capacity": 53,
+              "tickets_sold": 0
             }
           ],
           "total_dates": 1
@@ -4356,7 +4392,7 @@
       "product_id": 30897,
       "product_name": "Alvin Kuai @ Backroom Comedy Club | Limited Run",
       "product_price": "30",
-      "total_sales": 39,
+      "total_sales": 40,
       "slots": [
         {
           "product_id": 30897,
@@ -4376,10 +4412,10 @@
             {
               "date_id": "lwmolveojgrfnyuokkdq",
               "date": "June 14, 2025",
-              "stock": 42,
-              "available": 42,
+              "stock": 41,
+              "available": 41,
               "total_capacity": 55,
-              "tickets_sold": 13
+              "tickets_sold": 14
             }
           ],
           "total_dates": 2
@@ -4412,6 +4448,87 @@
         }
       ],
       "slot_count": 2
+    },
+    {
+      "product_id": 37268,
+      "product_name": "Chris Robinson Headlines Backroom Comedy Club | Limited Edition",
+      "product_price": "29.97",
+      "total_sales": 0,
+      "slots": [
+        {
+          "product_id": 37268,
+          "product_name": "Chris Robinson Headlines Backroom Comedy Club | Limited Edition",
+          "slot_id": "event_37268",
+          "slot_label": "Chris Robinson Headlines Backroom Comedy Club | Limited Edition Show",
+          "slot_time": "08:00 p.m.",
+          "dates": [
+            {
+              "date_id": "date_37268",
+              "date": "July 04, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            }
+          ],
+          "total_dates": 1
+        }
+      ],
+      "slot_count": 1
+    },
+    {
+      "product_id": 38067,
+      "product_name": "Gavin Stephens @ Backroom Comedy Club | Limited Run!",
+      "product_price": "27.96",
+      "total_sales": 0,
+      "slots": [
+        {
+          "product_id": 38067,
+          "product_name": "Gavin Stephens @ Backroom Comedy Club | Limited Run!",
+          "slot_id": "event_38067",
+          "slot_label": "Gavin Stephens @ Backroom Comedy Club | Limited Run! Show",
+          "slot_time": "08:00 p.m.",
+          "dates": [
+            {
+              "date_id": "date_38067",
+              "date": "July 11, 2025",
+              "stock": 55,
+              "available": 55,
+              "total_capacity": 55,
+              "tickets_sold": 0
+            }
+          ],
+          "total_dates": 1
+        }
+      ],
+      "slot_count": 1
+    },
+    {
+      "product_id": 37526,
+      "product_name": "Jordan Policicchio @ Backroom Comedy Club | Limited Run!",
+      "product_price": "24.76",
+      "total_sales": 4,
+      "slots": [
+        {
+          "product_id": 37526,
+          "product_name": "Jordan Policicchio @ Backroom Comedy Club | Limited Run!",
+          "slot_id": "event_37526",
+          "slot_label": "Jordan Policicchio @ Backroom Comedy Club | Limited Run! Show",
+          "slot_time": "08:00 p.m.",
+          "dates": [
+            {
+              "date_id": "date_37526",
+              "date": "July 11, 2025",
+              "stock": 51,
+              "available": 51,
+              "total_capacity": 51,
+              "tickets_sold": 0
+            }
+          ],
+          "total_dates": 1
+        }
+      ],
+      "slot_count": 1
     },
     {
       "product_id": 37271,
@@ -4537,10 +4654,10 @@
     }
   ],
   "failed_products": [],
-  "total_products": 15,
+  "total_products": 16,
   "failed_count": 0,
-  "total_slots": 32,
-  "total_dates": 510,
-  "last_updated": "2025-05-27T19:00:54.295484+00:00",
+  "total_slots": 34,
+  "total_dates": 521,
+  "last_updated": "2025-05-30T07:24:11.394816+00:00",
   "cache_source": "api"
 }

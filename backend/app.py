@@ -11,13 +11,21 @@ from eventbrite import EventbriteClient, EventbriteAPIError
 from woocommerce import WooCommerceClient, WooCommerceAPIError
 from event_mappings import EventMappingManager, EventMapping, UnmappedEvent
 import logging
+import traceback # Import traceback for more detailed logging if needed, though exc_info=True should suffice
 
 app = FastAPI(title="Eventbrite Capacity Manager & WooCommerce FooEvents", version="1.0.0")
 
 # Add CORS middleware to allow frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # React dev servers
+    allow_origins=[
+        "http://localhost:3000",              # React dev server
+        "http://localhost:4173",              # Vite preview
+        "http://localhost:4174",              # Current local port
+        "http://localhost:5173",              # Vite dev server  
+        "https://brccsync.vercel.app",        # production frontend
+        "https://brcc-sync-*.vercel.app",     # Any Vercel preview deployments
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -311,7 +319,8 @@ async def refresh_woocommerce_products():
     """Force refresh of WooCommerce products data from API"""
     try:
         client = WooCommerceClient()
-        result = await client.refresh_woocommerce_products()
+        # Corrected method call: get_all_fooevents_products with use_cache=False
+        result = await client.get_all_fooevents_products(use_cache=False, use_discovery=True)
         
         return CapacityResponse(
             success=True,
@@ -319,8 +328,10 @@ async def refresh_woocommerce_products():
             data=result
         )
     except WooCommerceAPIError as e:
+        logging.error(f"WooCommerceAPIError in /woocommerce/products/refresh: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+    except Exception as e: # Generic exception handler
+        logging.error(f"Unhandled exception in /woocommerce/products/refresh: {e}", exc_info=True) # Log the full traceback
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.get("/woocommerce/products/cache-info")
@@ -417,7 +428,7 @@ async def increment_woocommerce_inventory(request: WooCommerceInventoryRequest):
         
         return CapacityResponse(
             success=True,
-            message=f"Successfully incremented inventory from {result['old_stock']} to {result['new_stock']}",
+            message=f"Successfully incremented inventory from {result.get('old_stock_available', 'N/A')} to {result.get('new_stock_available', 'N/A')}",
             data=result
         )
     except WooCommerceAPIError as e:
@@ -438,7 +449,7 @@ async def decrement_woocommerce_inventory(request: WooCommerceInventoryRequest):
         
         return CapacityResponse(
             success=True,
-            message=f"Successfully decremented inventory from {result['old_stock']} to {result['new_stock']}",
+            message=f"Successfully decremented inventory from {result.get('old_stock_available', 'N/A')} to {result.get('new_stock_available', 'N/A')}",
             data=result
         )
     except WooCommerceAPIError as e:
@@ -478,11 +489,19 @@ async def debug_product(product_id: int):
                     "keys_ending_with_stock": [k for k in first_slot.keys() if k.endswith("_stock")]
                 }
         
+        woo_commerce_events_event_value = None
+        if product_data.get('meta_data'):
+            for meta_item in product_data['meta_data']:
+                if meta_item.get('key') == 'WooCommerceEventsEvent':
+                    woo_commerce_events_event_value = meta_item.get('value')
+                    break
+        
         return {
             "product_id": product_id,
             "product_name": product_data.get('name'),
             "has_meta_data": bool(product_data.get('meta_data')),
             "meta_data_count": len(product_data.get('meta_data', [])),
+            "WooCommerceEventsEvent_value": woo_commerce_events_event_value, # Added this line
             "has_fooevents_data": bool(fooevents_data),
             "fooevents_slots_count": len(fooevents_data) if fooevents_data else 0,
             "formatted_slots_count": len(formatted_slots) if formatted_slots else 0,

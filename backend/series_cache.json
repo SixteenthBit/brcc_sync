@@ -76,13 +76,8 @@
     {
       "series_id": "448735799857",
       "series_name": "8PM Wednesdays - Pro Hilarious Stand-up | Humpday Comedy Delight",
-      "event_count": 33,
+      "event_count": 32,
       "events": [
-        {
-          "occurrence_id": "718874652437",
-          "start_date": "2025-05-28T20:00:00",
-          "url": "https://www.eventbrite.ca/e/8pm-wednesdays-pro-hilarious-stand-up-humpday-comedy-delight-tickets-718874652437"
-        },
         {
           "occurrence_id": "718874662467",
           "start_date": "2025-06-04T20:00:00",
@@ -248,13 +243,8 @@
     {
       "series_id": "769799319487",
       "series_name": "10 PM Wednesdays - Pro Hilarious Stand-up Comedy | Late-Night laughs",
-      "event_count": 84,
+      "event_count": 83,
       "events": [
-        {
-          "occurrence_id": "1226817186229",
-          "start_date": "2025-05-28T22:00:00",
-          "url": "https://www.eventbrite.ca/e/10-pm-wednesdays-pro-hilarious-stand-up-comedy-late-night-laughs-tickets-1226817186229"
-        },
         {
           "occurrence_id": "1226817196259",
           "start_date": "2025-06-04T22:00:00",
@@ -675,13 +665,8 @@
     {
       "series_id": "430277871697",
       "series_name": "8PM Thursday - Pro Hilarious Stand-up Comedy Vibes  | The Laughter Fix",
-      "event_count": 33,
+      "event_count": 32,
       "events": [
-        {
-          "occurrence_id": "754732955587",
-          "start_date": "2025-05-29T20:00:00",
-          "url": "https://www.eventbrite.ca/e/8pm-thursday-pro-hilarious-stand-up-comedy-vibes-the-laughter-fix-tickets-754732955587"
-        },
         {
           "occurrence_id": "754732965617",
           "start_date": "2025-06-05T20:00:00",
@@ -847,13 +832,8 @@
     {
       "series_id": "769805277307",
       "series_name": "10PM Thursday - Hilarious Stand-up Comedy Vibes |Hilarious & unexpected.",
-      "event_count": 28,
+      "event_count": 27,
       "events": [
-        {
-          "occurrence_id": "769806831957",
-          "start_date": "2025-05-29T22:00:00",
-          "url": "https://www.eventbrite.ca/e/10pm-thursday-hilarious-stand-up-comedy-vibes-hilarious-unexpected-tickets-769806831957"
-        },
         {
           "occurrence_id": "769806841987",
           "start_date": "2025-06-05T22:00:00",
@@ -2021,6 +2001,83 @@
       ]
     },
     {
+      "series_id": "1068824515899",
+      "series_name": "Comedy Enthusiast | Stand Up Comedy Watch Party",
+      "event_count": 14,
+      "events": [
+        {
+          "occurrence_id": "1068830192879",
+          "start_date": "2025-07-10T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830192879"
+        },
+        {
+          "occurrence_id": "1068830212939",
+          "start_date": "2025-09-11T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830212939"
+        },
+        {
+          "occurrence_id": "1068830232999",
+          "start_date": "2025-11-13T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830232999"
+        },
+        {
+          "occurrence_id": "1068830253059",
+          "start_date": "2026-01-08T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830253059"
+        },
+        {
+          "occurrence_id": "1068830263089",
+          "start_date": "2026-02-12T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830263089"
+        },
+        {
+          "occurrence_id": "1068830273119",
+          "start_date": "2026-03-12T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830273119"
+        },
+        {
+          "occurrence_id": "1068830283149",
+          "start_date": "2026-04-09T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830283149"
+        },
+        {
+          "occurrence_id": "1068830293179",
+          "start_date": "2026-05-14T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830293179"
+        },
+        {
+          "occurrence_id": "1068830303209",
+          "start_date": "2026-06-11T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830303209"
+        },
+        {
+          "occurrence_id": "1068830313239",
+          "start_date": "2026-07-09T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830313239"
+        },
+        {
+          "occurrence_id": "1068830323269",
+          "start_date": "2026-08-13T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830323269"
+        },
+        {
+          "occurrence_id": "1068830333299",
+          "start_date": "2026-09-10T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830333299"
+        },
+        {
+          "occurrence_id": "1068830343329",
+          "start_date": "2026-10-08T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830343329"
+        },
+        {
+          "occurrence_id": "1068830353359",
+          "start_date": "2026-11-12T18:30:00",
+          "url": "https://www.eventbrite.ca/e/comedy-enthusiast-stand-up-comedy-watch-party-tickets-1068830353359"
+        }
+      ]
+    },
+    {
       "series_id": "1374995812489",
       "series_name": "Jordan Policicchio @ Backroom Comedy Club | Limited Run!",
       "event_count": 1,
@@ -2087,8 +2144,8 @@
       ]
     }
   ],
-  "total_series_count": 20,
-  "total_events_on_sale": 389,
-  "last_updated": "2025-05-27T18:59:24.026058+00:00",
+  "total_series_count": 21,
+  "total_events_on_sale": 399,
+  "last_updated": "2025-05-30T06:32:56.145698+00:00",
   "cache_source": "api"
 }

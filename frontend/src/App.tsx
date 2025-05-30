@@ -16,12 +16,23 @@ export interface SelectedEvent {
   details?: any;
 }
 
-export type ViewMode = 'dashboard' | 'comparison' | 'eventbrite' | 'woocommerce' | 'manage' | 'mapping';
+export type ViewMode = 'dashboard' | 'comparison' | 'eventbrite' | 'woocommerce' | 'mapping' | 'manage';
+
+// DEBUG: Log environment variables immediately
+console.log('🔍 === ENVIRONMENT VARIABLES DEBUG ===');
+console.log('All env vars:', import.meta.env);
+console.log('🔍 VITE_WOOCOMMERCE_API_URL:', import.meta.env.VITE_WOOCOMMERCE_API_URL);
+console.log('🔍 VITE_WOOCOMMERCE_CONSUMER_KEY:', import.meta.env.VITE_WOOCOMMERCE_CONSUMER_KEY);
+console.log('🔍 VITE_API_KEY:', import.meta.env.VITE_API_KEY);
+console.log('🔍 VITE_PUBLIC_TOKEN:', import.meta.env.VITE_PUBLIC_TOKEN);
+console.log('🔍 Total env variables count:', Object.keys(import.meta.env).length);
+console.log('🔍 ================================');
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
   const [selectedEvents, setSelectedEvents] = useState<SelectedEvent[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mappingIdForComparisonView, setMappingIdForComparisonView] = useState<string | null>(null);
 
   // Handle event selection from either platform
   const handleEventSelect = (event: SelectedEvent) => {
@@ -68,17 +79,16 @@ function App() {
   };
 
   // Handle sending mapping to compare view
-  const handleSendToCompare = async (_mappingId: string, mappingData?: any) => {
+  const handleSendToCompare = (mappingId: string, mappingData?: any) => {
     if (mappingData) {
-      // Convert mapping data to selected events format
+      // Existing flow: MappingView fetched data, now App processes it
       const selectedEventsFromMapping: SelectedEvent[] = [];
       
-      // Add WooCommerce combinations if available
       if (mappingData.woocommerce_combinations && Array.isArray(mappingData.woocommerce_combinations)) {
         mappingData.woocommerce_combinations.forEach((combination: any) => {
           selectedEventsFromMapping.push({
             type: 'woocommerce',
-            id: `${combination.product_id}_${combination.slot_id}_${combination.date_id}`,
+            id: `${combination.product_id}-${combination.slot_id}-${combination.date_id}`, // Ensure consistent ID format
             name: `${combination.product_name} - ${combination.slot_label} (${combination.date})`,
             details: {
               productId: combination.product_id,
@@ -98,23 +108,15 @@ function App() {
         });
       }
       
-      // Add Eventbrite series if available - convert to individual occurrences
       if (mappingData.eventbrite_series && Array.isArray(mappingData.eventbrite_series)) {
         mappingData.eventbrite_series.forEach((series: any) => {
-          // Get the next upcoming occurrence from this series
           const events = series.events || [];
           if (events.length > 0) {
-            // Sort events by start date and pick the first upcoming one
-            const sortedEvents = events.sort((a: any, b: any) => {
-              const dateA = new Date(a.start_date || '');
-              const dateB = new Date(b.start_date || '');
-              return dateA.getTime() - dateB.getTime();
-            });
-            
-            const nextEvent = sortedEvents[0];
+            const sortedEvents = events.sort((a: any, b: any) => new Date(a.start_date || '').getTime() - new Date(b.start_date || '').getTime());
+            const nextEvent = sortedEvents[0]; // Consider taking the first *upcoming* or most relevant
             selectedEventsFromMapping.push({
               type: 'eventbrite',
-              id: series.series_id || series.id,
+              id: nextEvent.occurrence_id || series.series_id || series.id, // Prefer occurrence_id for uniqueness
               name: `${series.series_name || series.name} (${new Date(nextEvent.start_date).toLocaleDateString()})`,
               details: {
                 ...nextEvent,
@@ -123,7 +125,6 @@ function App() {
               }
             });
           } else {
-            // Fallback: add series info without specific occurrence
             selectedEventsFromMapping.push({
               type: 'eventbrite',
               id: series.series_id || series.id,
@@ -133,11 +134,13 @@ function App() {
           }
         });
       }
-      
-      // Update selected events
       setSelectedEvents(selectedEventsFromMapping);
+      setMappingIdForComparisonView(null); // Ensure no ID is lingering if data was provided
+    } else {
+      // New flow: MappingView sends only ID, ComparisonView will fetch
+      setSelectedEvents([]); // Clear any existing selections
+      setMappingIdForComparisonView(mappingId);
     }
-    
     setCurrentView('comparison');
   };
 
@@ -154,24 +157,25 @@ function App() {
         );
       case 'comparison':
         return (
-          <ComparisonView 
+          <ComparisonView
             selectedEvents={selectedEvents}
             onEventSelect={handleEventSelect}
             onClearSelections={handleClearSelections}
             replaceSelectedEvent={replaceSelectedEvent}
+            mappingIdToLoad={mappingIdForComparisonView}
+            onMappingLoaded={() => setMappingIdForComparisonView(null)} // Callback to clear the ID
           />
         );
       case 'mapping':
         return (
-          <MappingView 
-            onSendToCompare={handleSendToCompare}
+          <MappingView
+            onSendToCompare={handleSendToCompare} // This now sends (mappingId) or (mappingId, data)
           />
         );
       case 'eventbrite':
       case 'woocommerce':
-      case 'manage':
         return (
-          <EventManager 
+          <EventManager
             mode={currentView}
             selectedEvents={selectedEvents}
             onEventSelect={handleEventSelect}

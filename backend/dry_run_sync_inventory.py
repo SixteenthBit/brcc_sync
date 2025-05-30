@@ -176,7 +176,7 @@ async def simulate_sync_inventory(group: Dict[str, Any], wc_client: WooCommerceC
             "old_capacity": event["capacity"],
             "new_capacity": new_capacity,
             "change": change,
-            "set_call": _get_set_call_details(group["events"][i], new_capacity)
+            "set_call": _get_set_call_details(group["events"][i], new_capacity, new_available)
         })
     
     # Print results
@@ -198,16 +198,18 @@ async def simulate_sync_inventory(group: Dict[str, Any], wc_client: WooCommerceC
         "new_values": new_values
     }
 
-def _get_set_call_details(event: Dict[str, Any], new_capacity: int) -> str:
+def _get_set_call_details(event: Dict[str, Any], new_capacity_for_eventbrite: int, new_available_for_woocommerce: int) -> str:
     """Generate the API call that would be made to set capacity"""
     if event["type"] == "woocommerce":
+        # For WooCommerce, newStock should be the target available amount
         return (f"setWooCommerceInventory(productId={event['product_id']}, "
                 f"slotId='{event['slot_id']}', dateId='{event['date_id']}', "
-                f"newStock={new_capacity})")
+                f"newStock={new_available_for_woocommerce})")
     elif event["type"] == "eventbrite":
+        # For Eventbrite, newCapacity is the target total capacity (available + sold)
         return (f"setEventbriteCapacity(eventId='{event['event_id']}', "
                 f"ticketClassId='{event['ticket_class_id']}', "
-                f"newCapacity={new_capacity})")
+                f"newCapacity={new_capacity_for_eventbrite})")
     else:
         return f"Unknown event type: {event['type']}"
 

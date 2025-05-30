@@ -2,7 +2,15 @@
  * API utility for communicating with the FastAPI backend
  */
 
-const API_BASE_URL = 'http://localhost:8000';
+// Use environment variable for API base URL, fallback to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+// Debug logging for API configuration
+console.log('🔍 API Configuration Debug:');
+console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
+console.log('Final API_BASE_URL:', API_BASE_URL);
+console.log('Environment:', import.meta.env.MODE);
+console.log('================================');
 
 export interface CapacityData {
   capacity: number;
@@ -226,11 +234,28 @@ export interface UpdateMappingRequest {
   is_active?: boolean;
 }
 
+// Interface for the individual WooCommerce items in the comparison group
+export interface WooCommerceCombination {
+  product_id: number;
+  product_name: string;
+  slot_id: string;
+  slot_label: string;
+  slot_time: string;
+  date_id: string;
+  date: string;
+  stock: number | string;
+  available: number | string;
+  total_capacity: number | string;
+  tickets_sold: number | string;
+  price?: string;
+  product_price?: string; // Fallback if price not directly on combination
+}
+
 export interface ComparisonGroupData {
   mapping_id: string;
   mapping_name: string;
-  woocommerce_product: any;
-  eventbrite_series: any[];
+  woocommerce_combinations: WooCommerceCombination[]; // Changed from woocommerce_product
+  eventbrite_series: EventSeries[]; // Use existing EventSeries type
   comparison_ready: boolean;
 }
 
@@ -251,8 +276,17 @@ class ApiError extends Error {
 }
 
 async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const fullUrl = `${API_BASE_URL}${url}`;
+  
+  // Debug logging
+  console.log('🔍 API Request Debug:');
+  console.log('Making request to:', fullUrl);
+  console.log('Method:', options.method || 'GET');
+  console.log('Headers:', options.headers);
+  console.log('Body:', options.body);
+  
   try {
-    const response = await fetch(`${API_BASE_URL}${url}`, {
+    const response = await fetch(fullUrl, {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -260,13 +294,27 @@ async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T
       ...options,
     });
 
+    console.log('🔍 Response Debug:');
+    console.log('Status:', response.status);
+    console.log('StatusText:', response.statusText);
+    console.log('OK:', response.ok);
+    console.log('URL:', response.url);
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+      console.error('🔍 API Error Response:', errorData);
       throw new ApiError(errorData.detail || `HTTP ${response.status}`, response.status);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('🔍 Success Response:', data);
+    return data;
   } catch (error) {
+    console.error('🔍 Fetch Error Details:');
+    console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error);
+    console.error('Error message:', error instanceof Error ? error.message : String(error));
+    console.error('Full error:', error);
+    
     if (error instanceof ApiError) {
       throw error;
     }
@@ -481,4 +529,4 @@ export const api = {
   },
 };
 
-export { ApiError }; 
+export { ApiError };
