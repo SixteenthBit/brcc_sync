@@ -6,11 +6,6 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 // Debug logging for API configuration
-console.log('🔍 API Configuration Debug:');
-console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
-console.log('Final API_BASE_URL:', API_BASE_URL);
-console.log('Environment:', import.meta.env.MODE);
-console.log('================================');
 
 export interface CapacityData {
   capacity: number;
@@ -279,11 +274,6 @@ async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T
   const fullUrl = `${API_BASE_URL}${url}`;
   
   // Debug logging
-  console.log('🔍 API Request Debug:');
-  console.log('Making request to:', fullUrl);
-  console.log('Method:', options.method || 'GET');
-  console.log('Headers:', options.headers);
-  console.log('Body:', options.body);
   
   try {
     const response = await fetch(fullUrl, {
@@ -294,11 +284,6 @@ async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T
       ...options,
     });
 
-    console.log('🔍 Response Debug:');
-    console.log('Status:', response.status);
-    console.log('StatusText:', response.statusText);
-    console.log('OK:', response.ok);
-    console.log('URL:', response.url);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
@@ -307,7 +292,6 @@ async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T
     }
 
     const data = await response.json();
-    console.log('🔍 Success Response:', data);
     return data;
   } catch (error) {
     console.error('🔍 Fetch Error Details:');

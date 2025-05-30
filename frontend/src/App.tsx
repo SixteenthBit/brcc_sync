@@ -19,14 +19,7 @@ export interface SelectedEvent {
 export type ViewMode = 'dashboard' | 'comparison' | 'eventbrite' | 'woocommerce' | 'mapping' | 'manage';
 
 // DEBUG: Log environment variables immediately
-console.log('🔍 === ENVIRONMENT VARIABLES DEBUG ===');
-console.log('All env vars:', import.meta.env);
-console.log('🔍 VITE_WOOCOMMERCE_API_URL:', import.meta.env.VITE_WOOCOMMERCE_API_URL);
-console.log('🔍 VITE_WOOCOMMERCE_CONSUMER_KEY:', import.meta.env.VITE_WOOCOMMERCE_CONSUMER_KEY);
-console.log('🔍 VITE_API_KEY:', import.meta.env.VITE_API_KEY);
-console.log('🔍 VITE_PUBLIC_TOKEN:', import.meta.env.VITE_PUBLIC_TOKEN);
-console.log('🔍 Total env variables count:', Object.keys(import.meta.env).length);
-console.log('🔍 ================================');
+// DEBUG: Log environment variables immediately
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');

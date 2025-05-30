@@ -265,7 +265,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
           const productFromMasterList = dataState.woocommerceProducts.find(p => p.product_id === currentIds.currentProductId);
           const slotFromMasterList = productFromMasterList?.slots.find(s => s.slot_id === currentIds.currentSlotId);
           const dateFromMasterList = slotFromMasterList?.dates.find(d => d.date_id === currentIds.currentDateId);
-          console.log(`[loadEventDetails] WC Date for ${key} (from dataState):`, dateFromMasterList ? JSON.parse(JSON.stringify(dateFromMasterList)) : 'dateFromMasterList is null/undefined');
 
           if (productFromMasterList && slotFromMasterList && dateFromMasterList) {
             newDetails[key] = {
@@ -441,7 +440,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                         tickets_sold: updatedInventory.quantity_sold,
                         stock: updatedInventory.available
                       };
-                      console.log(`[updateWooCommerceMasterState] Updated WC Date object for ${productId}-${slotId}-${dateId} in dataState.woocommerceProducts:`, updatedDate ? JSON.parse(JSON.stringify(updatedDate)) : 'updatedDate is null/undefined');
                       return updatedDate;
                     }
                     return d;
@@ -467,9 +465,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
     setEventDetails(prev => ({ ...prev, [eventKey]: { ...prev[eventKey], inventoryLoading: true, inventoryError: undefined } }));
     try {
       const result = await api.incrementWooCommerceInventory(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId);
-      console.log(`[handleInventoryIncrement] API Response (result.data) for ${eventKey}:`, result && result.data ? JSON.parse(JSON.stringify(result.data)) : 'API result or result.data is null/undefined');
       const updatedInventoryData = result.data;
-      console.log(`[handleInventoryIncrement] Data passed to updateWooCommerceMasterState for ${eventKey}:`, updatedInventoryData ? JSON.parse(JSON.stringify(updatedInventoryData)) : 'updatedInventoryData is null/undefined');
       if (updatedInventoryData) { // Ensure data exists before updating state
         updateWooCommerceMasterState(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, updatedInventoryData);
       }
@@ -499,9 +495,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
     setEventDetails(prev => ({ ...prev, [eventKey]: { ...prev[eventKey], inventoryLoading: true, inventoryError: undefined } }));
     try {
       const result = await api.decrementWooCommerceInventory(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId);
-      console.log(`[handleInventoryDecrement] API Response (result.data) for ${eventKey}:`, result && result.data ? JSON.parse(JSON.stringify(result.data)) : 'API result or result.data is null/undefined');
       const updatedInventoryData = result.data;
-      console.log(`[handleInventoryDecrement] Data passed to updateWooCommerceMasterState for ${eventKey}:`, updatedInventoryData ? JSON.parse(JSON.stringify(updatedInventoryData)) : 'updatedInventoryData is null/undefined');
       if (updatedInventoryData) { // Ensure data exists before updating state
         updateWooCommerceMasterState(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, updatedInventoryData);
       }
@@ -550,9 +544,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
 
     try {
       const result = await api.setWooCommerceInventory(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, newStock);
-      console.log(`[handleSetWooCommerce] API Response (result.data) for ${eventKey}:`, result && result.data ? JSON.parse(JSON.stringify(result.data)) : 'API result or result.data is null/undefined');
       const updatedInventoryData = result.data;
-      console.log(`[handleSetWooCommerce] Data passed to updateWooCommerceMasterState for ${eventKey}:`, updatedInventoryData ? JSON.parse(JSON.stringify(updatedInventoryData)) : 'updatedInventoryData is null/undefined');
       if (updatedInventoryData) { // Ensure data exists before updating state
         updateWooCommerceMasterState(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, updatedInventoryData);
       }
@@ -790,7 +782,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                             // old_capacity is not critical here for updateWooCommerceMasterState
                             event_id: String(currentIds.currentProductId)
                         };
-                        console.log(`[refreshEventDetails] Payload for updateWooCommerceMasterState for ${key}:`, JSON.parse(JSON.stringify(payloadForStateUpdate)));
                         updateWooCommerceMasterState(currentIds.currentProductId, currentIds.currentSlotId, currentIds.currentDateId, payloadForStateUpdate);
                         
                         setEventDetails(prev => ({

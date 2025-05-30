@@ -65,8 +65,6 @@ const SeriesViewer: React.FC<SeriesViewerProps> = ({ onOccurrenceSelect, initial
       setLastUpdated(response.data.last_updated || null);
       setCacheSource(response.data.cache_source || null);
       
-      console.log(`Loaded ${response.data.total_series_count} series with ${response.data.total_events_on_sale} events on sale`);
-      console.log(`Data source: ${response.data.cache_source || 'unknown'}`);
       
       // Refresh cache info after loading
       await loadCacheInfo();
