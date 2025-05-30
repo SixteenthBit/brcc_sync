@@ -18,7 +18,14 @@ app = FastAPI(title="Eventbrite Capacity Manager & WooCommerce FooEvents", versi
 # Add CORS middleware to allow frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # React dev servers
+    allow_origins=[
+        "http://localhost:3000",              # React dev server
+        "http://localhost:4173",              # Vite preview
+        "http://localhost:4174",              # Current local port
+        "http://localhost:5173",              # Vite dev server  
+        "https://brccsync.vercel.app",        # production frontend
+        "https://brcc-sync-*.vercel.app",     # Any Vercel preview deployments
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
