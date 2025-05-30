@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 
 // Import new components (will create these)
@@ -18,11 +18,29 @@ export interface SelectedEvent {
 
 export type ViewMode = 'dashboard' | 'comparison' | 'eventbrite' | 'woocommerce' | 'mapping' | 'manage';
 
+// DEBUG: Log environment variables immediately
+console.log('🔍 === ENVIRONMENT VARIABLES DEBUG ===');
+console.log('All env vars:', import.meta.env);
+console.log('🔍 VITE_WOOCOMMERCE_API_URL:', import.meta.env.VITE_WOOCOMMERCE_API_URL);
+console.log('🔍 VITE_WOOCOMMERCE_CONSUMER_KEY:', import.meta.env.VITE_WOOCOMMERCE_CONSUMER_KEY);
+console.log('🔍 VITE_API_KEY:', import.meta.env.VITE_API_KEY);
+console.log('🔍 VITE_PUBLIC_TOKEN:', import.meta.env.VITE_PUBLIC_TOKEN);
+console.log('🔍 Total env variables count:', Object.keys(import.meta.env).length);
+console.log('🔍 ================================');
+
 function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
   const [selectedEvents, setSelectedEvents] = useState<SelectedEvent[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mappingIdForComparisonView, setMappingIdForComparisonView] = useState<string | null>(null);
+
+  // DEBUG: Log environment variables when component mounts
+  useEffect(() => {
+    console.log('🔍 App component mounted - Environment check:');
+    console.log('Environment variables available:', !!import.meta.env);
+    console.log('WooCommerce URL exists:', !!import.meta.env.VITE_WOOCOMMERCE_API_URL);
+    console.log('Current API URL value:', import.meta.env.VITE_WOOCOMMERCE_API_URL);
+  }, []);
 
   // Handle event selection from either platform
   const handleEventSelect = (event: SelectedEvent) => {
