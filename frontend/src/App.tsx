@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import './App.css'
 
 // Import new components (will create these)
@@ -33,14 +33,6 @@ function App() {
   const [selectedEvents, setSelectedEvents] = useState<SelectedEvent[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mappingIdForComparisonView, setMappingIdForComparisonView] = useState<string | null>(null);
-
-  // DEBUG: Log environment variables when component mounts
-  useEffect(() => {
-    console.log('🔍 App component mounted - Environment check:');
-    console.log('Environment variables available:', !!import.meta.env);
-    console.log('WooCommerce URL exists:', !!import.meta.env.VITE_WOOCOMMERCE_API_URL);
-    console.log('Current API URL value:', import.meta.env.VITE_WOOCOMMERCE_API_URL);
-  }, []);
 
   // Handle event selection from either platform
   const handleEventSelect = (event: SelectedEvent) => {

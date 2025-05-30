@@ -5,12 +5,11 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    target: 'es2019', // Updated to fix nullish coalescing operator compatibility issues
+    target: 'es2019', 
     minify: 'esbuild',
     sourcemap: false,
     rollupOptions: {
       output: {
-        // Ensure compatibility with older browsers while supporting modern syntax
         format: 'es',
         manualChunks: undefined
       }
