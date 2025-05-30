@@ -665,13 +665,8 @@
     {
       "series_id": "430277871697",
       "series_name": "8PM Thursday - Pro Hilarious Stand-up Comedy Vibes  | The Laughter Fix",
-      "event_count": 33,
+      "event_count": 32,
       "events": [
-        {
-          "occurrence_id": "754732955587",
-          "start_date": "2025-05-29T20:00:00",
-          "url": "https://www.eventbrite.ca/e/8pm-thursday-pro-hilarious-stand-up-comedy-vibes-the-laughter-fix-tickets-754732955587"
-        },
         {
           "occurrence_id": "754732965617",
           "start_date": "2025-06-05T20:00:00",
@@ -837,13 +832,8 @@
     {
       "series_id": "769805277307",
       "series_name": "10PM Thursday - Hilarious Stand-up Comedy Vibes |Hilarious & unexpected.",
-      "event_count": 28,
+      "event_count": 27,
       "events": [
-        {
-          "occurrence_id": "769806831957",
-          "start_date": "2025-05-29T22:00:00",
-          "url": "https://www.eventbrite.ca/e/10pm-thursday-hilarious-stand-up-comedy-vibes-hilarious-unexpected-tickets-769806831957"
-        },
         {
           "occurrence_id": "769806841987",
           "start_date": "2025-06-05T22:00:00",
@@ -2155,7 +2145,7 @@
     }
   ],
   "total_series_count": 21,
-  "total_events_on_sale": 401,
-  "last_updated": "2025-05-29T21:58:59.520740+00:00",
+  "total_events_on_sale": 399,
+  "last_updated": "2025-05-30T06:32:56.145698+00:00",
   "cache_source": "api"
 }

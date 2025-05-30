@@ -109,66 +109,84 @@ class WooCommerceClient:
         """
         product_id = product.get('id', 'Unknown')
         product_name = product.get('name', 'Unknown Product')
+        logging.debug(f"[PID:{product_id}] Starting extract_fooevents_data for '{product_name}'.")
 
         if not product or not product.get('meta_data'):
-            logging.warning(f"Product {product_id} ({product_name}): No product data or meta_data found")
+            logging.warning(f"[PID:{product_id}] ({product_name}): No product data or meta_data found. Returning None.")
             return None
 
         meta_data = product.get('meta_data', [])
 
         # Helper to generate synthetic data for single events
         def _generate_synthetic_data(p_id, p_name, p_meta_data, p_stock_quantity=None):
+            logging.debug(f"[PID:{p_id}] ({p_name}): Entering _generate_synthetic_data. p_stock_quantity: {p_stock_quantity}")
             _event_meta_fields = {m.get('key'): m.get('value') for m in p_meta_data if m.get('key', '').startswith('WooCommerceEvents')}
             _event_date = _event_meta_fields.get('WooCommerceEventsDate', '')
             _event_hour = _event_meta_fields.get('WooCommerceEventsHour', '00')
             _event_minutes = _event_meta_fields.get('WooCommerceEventsMinutes', '00')
             _event_period = _event_meta_fields.get('WooCommerceEventsPeriod', '')
             
-            _stock_to_use = p_stock_quantity if p_stock_quantity is not None else 999
-
-            if p_stock_quantity is None: # Try to derive stock if not directly provided (e.g., from WC stock_quantity)
+            _stock_to_use_str = None
+            if p_stock_quantity is not None:
+                _stock_to_use_str = str(p_stock_quantity)
+                logging.debug(f"[PID:{p_id}] Synthetic stock source: p_stock_quantity = {_stock_to_use_str}")
+            else: # Try to derive stock if not directly provided
                 _fbos_meta_for_synthetic_helper = next((m for m in p_meta_data if m.get('key') == 'fooevents_bookings_options_serialized'), None)
                 if _fbos_meta_for_synthetic_helper and _fbos_meta_for_synthetic_helper.get('value'):
+                    logging.debug(f"[PID:{p_id}] Synthetic stock: Attempting to derive from FBOS.")
                     try:
                         _bdata_val_check = _fbos_meta_for_synthetic_helper['value']
                         if isinstance(_bdata_val_check, str): _bdata_val_check = json.loads(_bdata_val_check)
                         
-                        if _bdata_val_check and len(_bdata_val_check) == 1:
+                        if isinstance(_bdata_val_check, dict) and len(_bdata_val_check) == 1:
                             _first_slot_key = list(_bdata_val_check.keys())[0]
                             _first_slot_data = _bdata_val_check[_first_slot_key]
                             if isinstance(_first_slot_data, dict):
-                                if f"date_{p_id}_stock" in _first_slot_data:
-                                    _stock_to_use = int(_first_slot_data[f"date_{p_id}_stock"] or 0)
-                                elif 'add_date' in _first_slot_data and isinstance(_first_slot_data['add_date'], dict) and len(_first_slot_data['add_date']) == 1:
+                                if f"date_{p_id}_stock" in _first_slot_data: # Synthetic flat stock
+                                    _stock_to_use_str = _first_slot_data[f"date_{p_id}_stock"]
+                                    logging.debug(f"[PID:{p_id}] Synthetic stock source: FBOS flat 'date_{p_id}_stock' = {_stock_to_use_str}")
+                                elif 'add_date' in _first_slot_data and isinstance(_first_slot_data['add_date'], dict) and len(_first_slot_data['add_date']) == 1: # Synthetic nested stock
                                     _date_detail_key = list(_first_slot_data['add_date'].keys())[0]
                                     _date_detail_val = _first_slot_data['add_date'][_date_detail_key]
                                     if isinstance(_date_detail_val, dict) and 'stock' in _date_detail_val:
-                                        _stock_to_use = int(_date_detail_val['stock'] or 0)
-                                elif not _first_slot_key.startswith(f"event_") and len([k for k in _first_slot_data if k.endswith('_add_date')]) == 1:
+                                        _stock_to_use_str = _date_detail_val['stock']
+                                        logging.debug(f"[PID:{p_id}] Synthetic stock source: FBOS nested add_date.stock = {_stock_to_use_str}")
+                                elif not _first_slot_key.startswith(f"event_") and len([k for k in _first_slot_data if k.endswith('_add_date')]) == 1: # Potentially simple non-synthetic flat
                                     _stock_keys = [k for k in _first_slot_data if k.endswith('_stock')]
-                                    if _stock_keys: _stock_to_use = int(_first_slot_data[_stock_keys[0]] or 0)
-                    except Exception:
-                        logging.debug(f"Product {p_id} ({p_name}): Synthetic helper could not determine stock from FBOS, using default/WC stock.")
+                                    if _stock_keys:
+                                        _stock_to_use_str = _first_slot_data[_stock_keys[0]]
+                                        logging.debug(f"[PID:{p_id}] Synthetic stock source: FBOS simple non-synthetic flat '{_stock_keys[0]}' = {_stock_to_use_str}")
+                    except Exception as e_synth_fbos:
+                        logging.debug(f"[PID:{p_id}] Synthetic helper: Error deriving stock from FBOS: {e_synth_fbos}. FBOS raw: {_fbos_meta_for_synthetic_helper.get('value')}")
                         pass
             
+            _final_stock_val = 0
+            if _stock_to_use_str is not None and _stock_to_use_str != '':
+                try: _final_stock_val = int(_stock_to_use_str)
+                except (ValueError, TypeError):
+                    logging.warning(f"[PID:{p_id}] Synthetic stock: Could not convert '{_stock_to_use_str}' to int, using 0.")
+                    _final_stock_val = 0
+            else: # Default if no stock info found
+                _final_stock_val = 999 # Default for "unlimited" or unknown in synthetic context
+                logging.debug(f"[PID:{p_id}] Synthetic stock: No stock value found, defaulting to {_final_stock_val}.")
+
             _synthetic_slot_id = f"event_{p_id}"
             _synthetic_date_id = f"date_{p_id}"
-            logging.debug(f"Product {p_id} ({p_name}): Generating synthetic data with stock: {_stock_to_use}")
+            logging.info(f"[PID:{p_id}] ({p_name}): Generating SYNTHETIC data. Stock used: {_final_stock_val}. Date: '{_event_date}', Time: '{_event_hour}:{_event_minutes} {_event_period}'.")
             return {
                 _synthetic_slot_id: {
                     'label': f"{p_name} Show", 'hour': _event_hour, 'minute': _event_minutes,
                     'period': _event_period, 'add_time': 'enabled',
-                    f'{_synthetic_date_id}_add_date': _event_date, f'{_synthetic_date_id}_stock': str(_stock_to_use)
+                    f'{_synthetic_date_id}_add_date': _event_date, f'{_synthetic_date_id}_stock': str(_final_stock_val)
                 }
             }
-
-        # Revised logic for extract_fooevents_data - Attempt 3
 
         # 1. Primary Check: WooCommerce Stock Management (Strongest Single Event Indicator)
         manage_stock = product.get('manage_stock', False)
         stock_quantity_val = product.get('stock_quantity')
+        logging.debug(f"[PID:{product_id}] Check 1: manage_stock={manage_stock}, stock_quantity_val={stock_quantity_val}")
         if manage_stock and stock_quantity_val is not None:
-            logging.info(f"Product {product_id} ({product_name}): Uses WooCommerce stock management (manage_stock=True). Classifying as SINGLE EVENT.")
+            logging.info(f"[PID:{product_id}] ({product_name}): Path 1 - Uses WooCommerce stock management. Classifying as SINGLE EVENT.")
             return _generate_synthetic_data(product_id, product_name, meta_data, stock_quantity_val)
 
         # 2. Secondary Check: Analyze fooevents_bookings_options_serialized (FBOS)
@@ -177,61 +195,64 @@ class WooCommerceClient:
         fbos_is_present_and_structured = False
 
         if fooevents_meta and fooevents_meta.get('value'):
+            logging.debug(f"[PID:{product_id}] Check 2: FBOS meta field found. Value type: {type(fooevents_meta.get('value'))}")
             try:
                 booking_data_raw = fooevents_meta['value']
                 parsed_fbos_data = json.loads(booking_data_raw) if isinstance(booking_data_raw, str) else booking_data_raw
                 if isinstance(parsed_fbos_data, dict) and len(parsed_fbos_data) > 0:
                     fbos_is_present_and_structured = True
+                    logging.debug(f"[PID:{product_id}] FBOS parsed successfully. Top-level keys: {list(parsed_fbos_data.keys())}")
                 else:
-                    logging.debug(f"Product {product_id} ({product_name}): FBOS meta found but value is empty or not a structured dictionary.")
-                    parsed_fbos_data = None # Ensure it's None if not structured
+                    logging.debug(f"[PID:{product_id}] FBOS meta value is empty or not a structured dictionary after parsing. Raw: '{booking_data_raw}'")
+                    parsed_fbos_data = None
             except (json.JSONDecodeError, TypeError) as e:
-                logging.error(f"Product {product_id} ({product_name}): Error parsing FBOS - {e}. Treating FBOS as absent/unstructured.")
-                parsed_fbos_data = None # Ensure it's None on error
+                logging.error(f"[PID:{product_id}] ({product_name}): Error parsing FBOS - {e}. Raw FBOS: '{fooevents_meta.get('value', '')}'. Treating FBOS as absent/unstructured.")
+                parsed_fbos_data = None
         else:
-            logging.debug(f"Product {product_id} ({product_name}): No FBOS meta found or value is empty.")
+            logging.debug(f"[PID:{product_id}] Check 2: No FBOS meta field found or its value is empty.")
 
         if fbos_is_present_and_structured:
-            # Check for "Complex Booking" indicators within the successfully parsed FBOS
             is_complex_booking_from_fbos = False
-            if len(parsed_fbos_data) > 1: # Multiple top-level slots
+            if len(parsed_fbos_data) > 1:
                 is_complex_booking_from_fbos = True
-            elif len(parsed_fbos_data) == 1: # Single top-level slot
+                logging.debug(f"[PID:{product_id}] FBOS complex: Multiple ({len(parsed_fbos_data)}) top-level slots.")
+            elif len(parsed_fbos_data) == 1:
                 first_slot_key = list(parsed_fbos_data.keys())[0]
-                if not first_slot_key.startswith(f"event_{product_id}"): # Slot key is not the simple synthetic pattern
+                logging.debug(f"[PID:{product_id}] FBOS: Single top-level slot key: '{first_slot_key}'. Synthetic pattern: 'event_{product_id}'.")
+                if not first_slot_key.startswith(f"event_{product_id}"):
                     first_slot_data = parsed_fbos_data[first_slot_key]
                     if isinstance(first_slot_data, dict):
-                        # Check for multiple dates within this non-synthetic single slot
-                        if ('add_date' in first_slot_data and isinstance(first_slot_data['add_date'], dict) and len(first_slot_data['add_date']) > 1) or \
-                           (len([k for k in first_slot_data if k.endswith('_add_date')]) > 1):
-                            is_complex_booking_from_fbos = True
+                        nested_dates_count = len(first_slot_data.get('add_date', {})) if isinstance(first_slot_data.get('add_date'), dict) else 0
+                        flat_dates_count = len([k for k in first_slot_data if k.endswith('_add_date')])
+                        logging.debug(f"[PID:{product_id}] FBOS non-synthetic single slot. Nested dates: {nested_dates_count}, Flat dates: {flat_dates_count}")
+                        if nested_dates_count > 1 or (nested_dates_count == 0 and flat_dates_count > 1): # More than one date implies complex
+                             is_complex_booking_from_fbos = True
+                             logging.debug(f"[PID:{product_id}] FBOS complex: Single non-synthetic slot with multiple dates.")
             
             if is_complex_booking_from_fbos:
-                logging.info(f"Product {product_id} ({product_name}): Detected complex booking structure in FBOS. Classifying as BOOKING EVENT.")
+                logging.info(f"[PID:{product_id}] ({product_name}): Path 2 - Detected complex booking structure in FBOS. Classifying as BOOKING EVENT.")
                 return parsed_fbos_data
 
         # 3. Tertiary Check: WooCommerceEventsEvent == 'Event' flag
-        # This is now considered if not managed by WC stock AND FBOS is not complex or not present.
         event_meta_fields = {meta.get('key'): meta.get('value') for meta in meta_data if meta.get('key', '').startswith('WooCommerceEvents')}
         is_explicit_single_event_flag = event_meta_fields.get('WooCommerceEventsEvent') == 'Event'
+        logging.debug(f"[PID:{product_id}] Check 3: WooCommerceEventsEvent == 'Event': {is_explicit_single_event_flag}")
         
         if is_explicit_single_event_flag:
-            # If the "Event" flag is set, and we haven't already determined it's a complex booking from FBOS,
-            # or a WC stock managed event, then it's likely a single event.
-            # The FBOS might be empty, or simple/synthetic here.
-            logging.info(f"Product {product_id} ({product_name}): Flagged as 'WooCommerceEventsEvent: Event' and FBOS not complex/absent. Classifying as SINGLE EVENT.")
-            return _generate_synthetic_data(product_id, product_name, meta_data, None) # Stock derived by helper
+            logging.info(f"[PID:{product_id}] ({product_name}): Path 3 - Flagged as 'WooCommerceEventsEvent: Event'. FBOS was not complex or absent. Classifying as SINGLE EVENT.")
+            return _generate_synthetic_data(product_id, product_name, meta_data, None)
 
         # 4. Final Fallback for FBOS: Check for simple synthetic pattern if FBOS was present but not complex, and no other flags hit.
-        if fbos_is_present_and_structured and parsed_fbos_data: # parsed_fbos_data would be non-None here if FBOS was present but not complex
+        logging.debug(f"[PID:{product_id}] Check 4: FBOS present and structured: {fbos_is_present_and_structured}, Parsed FBOS: {parsed_fbos_data is not None}")
+        if fbos_is_present_and_structured and parsed_fbos_data:
             if len(parsed_fbos_data) == 1:
                 _first_slot_key = list(parsed_fbos_data.keys())[0]
                 if _first_slot_key == f"event_{product_id}":
-                    logging.warning(f"Product {product_id} ({product_name}): FBOS data matches simple synthetic pattern. Classifying as SINGLE EVENT.")
+                    logging.info(f"[PID:{product_id}] ({product_name}): Path 4 - FBOS data matches simple synthetic pattern. Classifying as SINGLE EVENT.")
                     return _generate_synthetic_data(product_id, product_name, meta_data, None)
         
         # 5. No Definitive Data: If all checks above fail to classify.
-        logging.warning(f"Product {product_id} ({product_name}): No definitive FooEvents data found after all checks. Cannot determine event structure.")
+        logging.warning(f"[PID:{product_id}] ({product_name}): Path 5 - No definitive FooEvents data found after all checks. Cannot determine event structure. Returning None.")
         return None
 
     def format_booking_slots(self, product: Dict[str, Any], booking_data: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -830,7 +851,7 @@ class WooCommerceClient:
         """
         Determine if this is a real FooEvents Bookings product or a normal FooEvents product.
         
-        Key principle: If a product uses WooCommerce inventory tracking (manage_stock=True), 
+        Key principle: If a product uses WooCommerce inventory tracking (manage_stock=True),
         it's a single event regardless of booking metadata.
         
         Args:
@@ -839,261 +860,253 @@ class WooCommerceClient:
         Returns:
             True if this is a real FooEvents Bookings product, False if it's normal FooEvents
         """
-        product_id = product_data.get('id')
-        
-        # FALLBACK PRINCIPLE: If product uses WooCommerce stock management, it's a single event
+        product_id = product_data.get('id', 'UnknownID')
+        product_name = product_data.get('name', 'UnknownProduct')
+        logging.debug(f"[PID:{product_id}] _is_real_bookings_product: Starting for '{product_name}'.")
+
+        # Path 1: WooCommerce Stock Management (Highest Priority for "Normal")
         manage_stock = product_data.get('manage_stock', False)
         stock_quantity = product_data.get('stock_quantity')
-        
+        logging.debug(f"[PID:{product_id}] _is_real_bookings_product: manage_stock={manage_stock}, stock_quantity={stock_quantity}")
         if manage_stock and stock_quantity is not None:
-            # This product uses WooCommerce inventory tracking - it's a single event
-            logging.info(f"Product {product_id} ({product_data.get('name')}): Uses WooCommerce stock management - treating as normal FooEvents")
+            logging.info(f"[PID:{product_id}] ({product_name}): _is_real_bookings_product: Path 1 (WC Stock) -> False (Normal).")
             return False
 
-        # NEW SECONDARY CHECK: Prioritize WooCommerceEventsEvent metadata if present
         meta_data = product_data.get('meta_data', [])
-        woo_events_event_meta = next((meta for meta in meta_data if meta.get('key') == 'WooCommerceEventsEvent'), None)
-        if woo_events_event_meta and woo_events_event_meta.get('value') == 'Event':
-            logging.info(f"Product {product_id} ({product_data.get('name')}): Has 'WooCommerceEventsEvent: Event' metadata - treating as normal FooEvents")
-            return False
         
-        # TERTIARY CHECK: Analyze fooevents_bookings_options_serialized if not caught by above checks
+        # Path 2: Analyze fooevents_bookings_options_serialized (FBOS)
         fooevents_booking_meta = next((meta for meta in meta_data if meta.get('key') == 'fooevents_bookings_options_serialized'), None)
+        logging.debug(f"[PID:{product_id}] _is_real_bookings_product: FBOS meta found: {fooevents_booking_meta is not None}")
         
         if fooevents_booking_meta:
             value = fooevents_booking_meta.get('value')
-            if value:
+            if value: # FBOS meta key exists and has a value
+                logging.debug(f"[PID:{product_id}] _is_real_bookings_product: FBOS raw value type: {type(value)}, value (truncated): '{str(value)[:200]}'")
                 try:
-                    # Parse the booking data
-                    if isinstance(value, str):
-                        booking_data = json.loads(value)
-                    else:
-                        booking_data = value
+                    booking_data = json.loads(value) if isinstance(value, str) else value
+                    logging.debug(f"[PID:{product_id}] _is_real_bookings_product: FBOS parsed. Type: {type(booking_data)}. Is dict: {isinstance(booking_data, dict)}. Length: {len(booking_data) if isinstance(booking_data, dict) else 'N/A'}")
                     
-                    if booking_data and len(booking_data) > 0:
-                        # Check if this looks like synthetic data we created
-                        first_slot_key = list(booking_data.keys())[0]
-                        first_slot = booking_data[first_slot_key]
+                    if isinstance(booking_data, dict) and len(booking_data) > 0:
+                        # If FBOS is structured and not empty, it's likely a real booking unless it's clearly synthetic.
                         
-                        is_synthetic_slot = first_slot_key == f"event_{product_id}"
+                        # Check for synthetic pattern (single slot with event_PRODUCTID key and date_PRODUCTID keys)
+                        if len(booking_data) == 1:
+                            first_slot_key = list(booking_data.keys())[0]
+                            if first_slot_key == f"event_{product_id}":
+                                first_slot_data = booking_data[first_slot_key]
+                                if isinstance(first_slot_data, dict):
+                                    expected_date_key = f"date_{product_id}_add_date"
+                                    expected_stock_key = f"date_{product_id}_stock"
+                                    if expected_date_key in first_slot_data and expected_stock_key in first_slot_data:
+                                        logging.info(f"[PID:{product_id}] ({product_name}): _is_real_bookings_product: Path 2a (Synthetic FBOS structure) -> False (Normal).")
+                                        return False
                         
-                        if is_synthetic_slot:
-                            expected_date_key = f"date_{product_id}_add_date"
-                            expected_stock_key = f"date_{product_id}_stock"
-                            has_synthetic_dates = (
-                                isinstance(first_slot, dict) and # Ensure first_slot is a dict
-                                expected_date_key in first_slot and
-                                expected_stock_key in first_slot
-                            )
-                            if has_synthetic_dates:
-                                logging.info(f"Product {product_id} ({product_data.get('name')}): Detected synthetic booking data - treating as normal FooEvents")
-                                return False
-                        
-                        # Check if it has real nested add_date structure (genuine bookings)
-                        # Ensure first_slot is a dict before checking 'add_date'
-                        if isinstance(first_slot, dict) and 'add_date' in first_slot and first_slot['add_date']:
-                            logging.info(f"Product {product_id} ({product_data.get('name')}): Detected nested add_date structure - treating as real FooEvents Bookings")
-                            return True
-                        
-                        # Check if it has non-synthetic flat structure
-                        # Ensure first_slot is a dict before checking keys
-                        if isinstance(first_slot, dict):
-                            has_flat_dates = any(k.endswith('_add_date') for k in first_slot.keys())
-                            if has_flat_dates and not is_synthetic_slot:
-                                logging.info(f"Product {product_id} ({product_data.get('name')}): Detected non-synthetic flat structure - treating as real FooEvents Bookings")
-                                return True
-                        
-                        # FALLBACK for booking_data: If booking data exists but doesn't match above, and wasn't caught by earlier checks,
-                        # assume it's a real booking if it's not empty.
-                        logging.warning(f"Product {product_id} ({product_data.get('name')}): Has booking data not matching known single/synthetic patterns - treating as real FooEvents Bookings by default")
+                        # If not clearly synthetic and FBOS is structured, assume real booking.
+                        # This covers multi-slot, single non-synthetic slot with nested dates, or single non-synthetic slot with flat dates.
+                        logging.info(f"[PID:{product_id}] ({product_name}): _is_real_bookings_product: Path 2b (Structured, non-empty, non-synthetic FBOS) -> True (Real Booking).")
                         return True
                         
                 except (json.JSONDecodeError, TypeError) as e:
-                    logging.error(f"Product {product_id} ({product_data.get('name')}): Error parsing fooevents_bookings_options_serialized - {e}. Treating as normal FooEvents as a precaution.")
-                    return False # If booking data is malformed, safer to assume normal event
+                    logging.error(f"[PID:{product_id}] ({product_name}): _is_real_bookings_product: Error parsing FBOS value - {e}. Raw value: '{str(value)[:200]}'. Treating as Normal (False) due to parse error.")
+                    return False # If FBOS is unparseable, safer to assume normal.
+            else: # FBOS meta key exists, but value is empty/None
+                logging.debug(f"[PID:{product_id}] _is_real_bookings_product: FBOS meta key found, but value is empty. Will proceed to check WooCommerceEventsEvent flag.")
+                # Don't return yet, let WooCommerceEventsEvent flag be checked.
         
-        # FINAL FALLBACK: If no manage_stock, no WooCommerceEventsEvent='Event', and no (or unparseable) booking_options_serialized,
-        # it's most likely a simple product or misconfigured. Treat as normal FooEvents.
-        logging.info(f"Product {product_id} ({product_data.get('name')}): No definitive booking indicators - treating as normal FooEvents by default")
+        # Path 3: WooCommerceEventsEvent Meta (Considered if not WC stock managed AND FBOS is absent, empty, or unparseable)
+        woo_events_event_meta = next((meta for meta in meta_data if meta.get('key') == 'WooCommerceEventsEvent'), None)
+        logging.debug(f"[PID:{product_id}] _is_real_bookings_product: woo_events_event_meta value = {woo_events_event_meta.get('value') if woo_events_event_meta else 'Not Found'}")
+        if woo_events_event_meta and woo_events_event_meta.get('value') == 'Event':
+            # This implies it's a single event if FBOS didn't already classify it as a real booking.
+            logging.info(f"[PID:{product_id}] ({product_name}): _is_real_bookings_product: Path 3 (WooCommerceEventsEvent Meta is 'Event', and FBOS not conclusive for real booking) -> False (Normal).")
+            return False
+        
+        # Path 4: Final Fallback
+        # If manage_stock is false, WooCommerceEventsEvent is not 'Event', and FBOS is missing, empty, or unparseable,
+        # it's ambiguous. However, without FBOS, it cannot be a "real booking" in the sense of having booking metadata to manage.
+        # It's more likely a simple product or misconfigured.
+        logging.info(f"[PID:{product_id}] ({product_name}): _is_real_bookings_product: Path 4 (Final Fallback - no WC stock, no Event meta, no conclusive FBOS) -> False (Normal).")
         return False
 
     async def increment_woocommerce_inventory(self, product_id: int, slot_id: str = None, date_id: str = None) -> Dict[str, Any]:
         """
         Increment WooCommerce inventory by 1 for a specific product/slot/date.
-        
-        Args:
-            product_id: The WooCommerce product ID
-            slot_id: The slot ID (required for FooEvents Bookings)
-            date_id: The date ID (required for FooEvents Bookings)
-            
-        Returns:
-            Dict with old_stock, new_stock, and updated inventory data
         """
         try:
+            logging.debug(f"[PID:{product_id}] Attempting to increment inventory for slot '{slot_id}', date '{date_id}'.")
             product_data = await self.get_product_data(product_id)
-            booking_data = self.extract_fooevents_data(product_data)
+            booking_data = self.extract_fooevents_data(product_data) 
             
             if not booking_data:
+                logging.error(f"[PID:{product_id}] No FooEvents data found after extract_fooevents_data.")
                 raise WooCommerceAPIError(f"No FooEvents data found for product {product_id}")
             
             if not slot_id or not date_id:
-                # If it's a single (synthetic) event, slot_id and date_id might be derived
-                if f"event_{product_id}" in booking_data and f"date_{product_id}" in date_id: # Check if it's our synthetic structure
-                    pass # Allow to proceed
-                else:
+                is_synthetic = f"event_{product_id}" in booking_data and f"date_{product_id}" == date_id
+                if not is_synthetic:
+                    logging.error(f"[PID:{product_id}] Missing slot_id ('{slot_id}') or date_id ('{date_id}') for non-synthetic event.")
                     raise WooCommerceAPIError(f"Both slot_id and date_id are required for inventory management of multi-slot/date events")
             
             if slot_id not in booking_data:
+                logging.error(f"[PID:{product_id}] Slot '{slot_id}' not found in booking_data. Available slots: {list(booking_data.keys())}")
                 raise WooCommerceAPIError(f"Slot {slot_id} not found in product {product_id}")
             
             slot_data = booking_data[slot_id]
-            
             is_real_bookings_product = self._is_real_bookings_product(product_data)
-            
+            logging.debug(f"[PID:{product_id}] Is real bookings product: {is_real_bookings_product}")
+
+            old_stock_int = 0
+            new_stock_int = 0
+            stock_source_field_type = None 
+            date_str_for_response = "Unknown Date (inc_initial)" 
+            slot_label_for_response = slot_data.get('label', "Unknown Slot")
+            meta_data = product_data.get('meta_data', []) 
+
+
             if is_real_bookings_product:
-                # This is a real FooEvents Bookings product - update booking metadata
-                add_date = slot_data.get('add_date', {})
-                is_nested_structure = isinstance(add_date, dict) and add_date
+                logging.debug(f"[PID:{product_id}] Handling as REAL BOOKINGS product for increment.")
+                flat_override_stock_key = f"{date_id}_stock"
+                flat_override_date_key = f"{date_id}_add_date"
                 
-                if is_nested_structure:
-                    if date_id not in add_date:
-                        raise WooCommerceAPIError(f"Date {date_id} not found in slot {slot_id} for product {product_id}")
-                    
-                    date_info = add_date[date_id]
-                    old_stock = date_info.get('stock', '0')
-                    
-                    try: old_stock_int = int(old_stock) if old_stock != '' else 0
-                    except (ValueError, TypeError): old_stock_int = 0
-                    
-                    new_stock_int = old_stock_int + 1
-                    date_info['stock'] = str(new_stock_int)
-                    
-                    await self._update_product_booking_data(product_id, booking_data)
-                    
-                    slot_label = slot_data.get('label')
-                    date_str = date_info.get('date')
-                    tickets_sold_val = "Error"
-                    if slot_label and date_str and self.wp_db_available:
-                        _ts = self.wp_db.get_tickets_sold_for_date(product_id, slot_label, date_str)
-                        if isinstance(_ts, int):
-                            tickets_sold_val = _ts
-                    
-                    if isinstance(tickets_sold_val, int):
-                        old_total_capacity = old_stock_int + tickets_sold_val
-                        new_total_capacity_calculated = new_stock_int + tickets_sold_val
+                current_stock_str = slot_data.get(flat_override_stock_key)
+
+                if current_stock_str is not None and current_stock_str != '':
+                    stock_source_field_type = 'flat_override'
+                    date_str_for_response = slot_data.get(flat_override_date_key) # Try flat first
+                    if not date_str_for_response: # Fallback to nested for date string
+                        nested_add_date_data = slot_data.get('add_date', {})
+                        if isinstance(nested_add_date_data, dict) and date_id in nested_add_date_data and isinstance(nested_add_date_data[date_id], dict):
+                            date_str_for_response = nested_add_date_data[date_id].get('date')
+                    if not date_str_for_response: date_str_for_response = "Unknown Date (flat_stock_no_date_inc_initial)"
+                    logging.debug(f"[PID:{product_id}] Using FLAT OVERRIDE stock field '{flat_override_stock_key}' ('{current_stock_str}'). Date for response: '{date_str_for_response}'.")
+                else:
+                    logging.debug(f"[PID:{product_id}] Flat override stock field '{flat_override_stock_key}' not found/empty. Checking nested for increment.")
+                    add_date_data = slot_data.get('add_date', {})
+                    if isinstance(add_date_data, dict) and date_id in add_date_data and isinstance(add_date_data[date_id], dict):
+                        date_info_nested = add_date_data[date_id]
+                        current_stock_str = date_info_nested.get('stock', '0')
+                        stock_source_field_type = 'nested'
+                        date_str_for_response = date_info_nested.get('date', "Unknown Date (nested_inc_initial)")
+                        logging.debug(f"[PID:{product_id}] Using NESTED stock field from add_date['{date_id}']['stock'] ('{current_stock_str}'). Date: '{date_str_for_response}'.")
                     else:
-                        old_total_capacity = "Error"
-                        new_total_capacity_calculated = "Error"
-                    
-                    return {
-                        'product_id': product_id, 'product_name': product_data.get('name'),
-                        'slot_id': slot_id, 'slot_label': slot_label,
-                        'date_id': date_id, 'date': date_str,
-                        'old_capacity': old_total_capacity,
-                        'new_capacity': new_total_capacity_calculated,
-                        'quantity_sold': tickets_sold_val,
-                        'available': new_stock_int,
-                        'old_stock_available': old_stock_int,
-                        'new_stock_available': new_stock_int
-                    }
-                else: # Flat structure for real bookings
-                    stock_key = f'{date_id}_stock'
-                    date_key = f'{date_id}_add_date'
-                    
-                    if stock_key not in slot_data:
-                        raise WooCommerceAPIError(f"Stock field {stock_key} not found in slot {slot_id} for product {product_id}")
-                    
-                    old_stock = slot_data[stock_key]
-                    try: old_stock_int = int(old_stock) if old_stock != '' else 0
-                    except (ValueError, TypeError): old_stock_int = 0
-                    
-                    new_stock_int = old_stock_int + 1
-                    slot_data[stock_key] = str(new_stock_int)
-                    
-                    await self._update_product_booking_data(product_id, booking_data)
-
-                    # Re-fetch data to build accurate response
-                    final_product_data_after_op = await self.get_product_data(product_id)
-                    final_booking_data_after_op = self.extract_fooevents_data(final_product_data_after_op)
-                    final_slot_data_after_op = final_booking_data_after_op.get(slot_id, {}) if final_booking_data_after_op else {}
-                    
-                    current_available_stock_after_op = new_stock_int
-                    date_str_after_op = final_slot_data_after_op.get(f'{date_id}_add_date', slot_data.get(date_key, 'Unknown Date'))
-                    slot_label_after_op = final_slot_data_after_op.get('label', slot_data.get('label'))
-
-                    tickets_sold_val_after_op = "Error"
-                    if slot_label_after_op and date_str_after_op != 'Unknown Date' and self.wp_db_available:
-                        _ts_after = self.wp_db.get_tickets_sold_for_date(product_id, slot_label_after_op, date_str_after_op)
-                        if isinstance(_ts_after, int):
-                            tickets_sold_val_after_op = _ts_after
-                            
-                    response_old_total_capacity = "Error"
-                    response_new_total_capacity = "Error"
-                    if isinstance(tickets_sold_val_after_op, int):
-                        response_old_total_capacity = old_stock_int + tickets_sold_val_after_op
-                        response_new_total_capacity = current_available_stock_after_op + tickets_sold_val_after_op
-
-                    return {
-                        'product_id': product_id, 'product_name': final_product_data_after_op.get('name'),
-                        'slot_id': slot_id, 'slot_label': slot_label_after_op,
-                        'date_id': date_id, 'date': date_str_after_op,
-                        'old_capacity': response_old_total_capacity,
-                        'new_capacity': response_new_total_capacity,
-                        'quantity_sold': tickets_sold_val_after_op,
-                        'available': current_available_stock_after_op,
-                        'old_stock_available': old_stock_int,
-                        'new_stock_available': current_available_stock_after_op
-                    }
-            else: # Normal FooEvents product (synthetic or WC stock managed)
-                old_stock_quantity = product_data.get('stock_quantity')
-                if old_stock_quantity is None: # Not WC stock managed, use synthetic stock
-                    old_stock_quantity = slot_data.get(f"{date_id}_stock", '0') # date_id here is synthetic like "date_PRODUCTID"
-
-                try: old_stock_int = int(old_stock_quantity) if old_stock_quantity is not None and old_stock_quantity != '' else 0
-                except (ValueError, TypeError): old_stock_int = 0
+                        logging.error(f"[PID:{product_id}] Could not find stock for real booking (increment). Slot: {slot_id}, Date: {date_id}.")
+                        raise WooCommerceAPIError(f"Could not determine stock field for real booking (increment): Prod {product_id}, Slot {slot_id}, Date {date_id}")
+                
+                try:
+                    old_stock_int = int(current_stock_str) if current_stock_str is not None and current_stock_str != '' else 0
+                except (ValueError, TypeError) as e:
+                    logging.warning(f"[PID:{product_id}] Invalid stock string '{current_stock_str}' for real booking (increment), defaulting to 0. Error: {e}")
+                    old_stock_int = 0
                 
                 new_stock_int = old_stock_int + 1
+
+                if stock_source_field_type == 'flat_override':
+                    slot_data[flat_override_stock_key] = str(new_stock_int)
+                elif stock_source_field_type == 'nested':
+                    slot_data['add_date'][date_id]['stock'] = str(new_stock_int)
                 
-                if product_data.get('manage_stock', False) and product_data.get('stock_quantity') is not None:
+                await self._update_product_booking_data(product_id, booking_data)
+
+            else: # Normal FooEvents product (synthetic or WC stock managed)
+                logging.debug(f"[PID:{product_id}] Handling as NORMAL/SYNTHETIC product for increment.")
+                if product_data.get('manage_stock') and product_data.get('stock_quantity') is not None:
+                    stock_source_field_type = 'wc_stock'
+                    current_stock_str = str(product_data.get('stock_quantity', '0'))
+                    _event_meta_fields_inc = {m.get('key'): m.get('value') for m in meta_data if m.get('key', '').startswith('WooCommerceEvents')}
+                    date_str_for_response = _event_meta_fields_inc.get('WooCommerceEventsDate', slot_data.get(f"date_{product_id}_add_date", "Unknown Date (wc_stock_inc_initial)"))
+                    logging.debug(f"[PID:{product_id}] Using WC STOCK quantity '{current_stock_str}'. Date for response: '{date_str_for_response}'.")
+                else:
+                    stock_source_field_type = 'synthetic_meta'
+                    current_stock_str = slot_data.get(f"{date_id}_stock", '0') 
+                    date_str_for_response = slot_data.get(f"{date_id}_add_date", "Unknown Date (synthetic_meta_inc_initial)")
+                    logging.debug(f"[PID:{product_id}] Using SYNTHETIC META stock '{current_stock_str}' from slot_data['{date_id}_stock']. Date: '{date_str_for_response}'.")
+
+                try:
+                    old_stock_int = int(current_stock_str) if current_stock_str is not None and current_stock_str != '' else 0
+                except (ValueError, TypeError) as e:
+                    logging.warning(f"[PID:{product_id}] Invalid stock string '{current_stock_str}' for normal/synthetic (increment), defaulting to 0. Error: {e}")
+                    old_stock_int = 0
+
+                new_stock_int = old_stock_int + 1
+
+                if stock_source_field_type == 'wc_stock':
                     await self._update_product_stock_quantity(product_id, new_stock_int)
-                else: # Update synthetic booking data
+                elif stock_source_field_type == 'synthetic_meta':
                     slot_data[f"{date_id}_stock"] = str(new_stock_int)
                     await self._update_product_booking_data(product_id, booking_data)
+            
+            logging.info(f"[PID:{product_id}] Incremented stock. Type: {stock_source_field_type}, Old avail: {old_stock_int}, New avail: {new_stock_int}.")
 
-                # Re-fetch for accurate response data for non-real-booking products
-                final_product_data_after_op = await self.get_product_data(product_id)
-                final_booking_data_after_op = self.extract_fooevents_data(final_product_data_after_op)
-                final_slot_data_after_op = final_booking_data_after_op.get(slot_id, {}) if final_booking_data_after_op else {}
-                
-                current_available_stock_after_op = new_stock_int # Known
-                date_str_after_op = final_slot_data_after_op.get(f"{date_id}_add_date", slot_data.get(f"{date_id}_add_date", 'Unknown Date'))
-                slot_label_after_op = final_slot_data_after_op.get('label', slot_data.get('label'))
+            final_product_data = await self.get_product_data(product_id)
+            final_booking_data = self.extract_fooevents_data(final_product_data)
+            final_slot_data = final_booking_data.get(slot_id, {}) if final_booking_data else {}
+            final_meta_data_inc = final_product_data.get('meta_data', [])
+            
+            # Refined date_str_for_response derivation from final state
+            temp_date_str = "Unknown Date (final_inc_fallback)"
+            if stock_source_field_type == 'flat_override':
+                temp_date_str = final_slot_data.get(f"{date_id}_add_date")
+                if not temp_date_str:
+                    final_nested_add_date = final_slot_data.get('add_date', {})
+                    if isinstance(final_nested_add_date, dict) and date_id in final_nested_add_date and isinstance(final_nested_add_date[date_id], dict):
+                        temp_date_str = final_nested_add_date[date_id].get('date')
+            elif stock_source_field_type == 'nested':
+                final_add_date = final_slot_data.get('add_date', {})
+                final_date_info = final_add_date.get(date_id, {})
+                temp_date_str = final_date_info.get('date')
+            elif stock_source_field_type == 'wc_stock':
+                 _event_meta_fields_final_inc = {m.get('key'): m.get('value') for m in final_meta_data_inc if m.get('key', '').startswith('WooCommerceEvents')}
+                 temp_date_str = _event_meta_fields_final_inc.get('WooCommerceEventsDate')
+                 if not temp_date_str: 
+                     temp_date_str = final_slot_data.get(f"date_{product_id}_add_date") # Fallback for synthetic-like WC stock
+            elif stock_source_field_type == 'synthetic_meta':
+                temp_date_str = final_slot_data.get(f"{date_id}_add_date")
+            
+            date_str_for_response = temp_date_str if temp_date_str else "Unknown Date (final_inc_unresolved)"
 
-                tickets_sold_val_after_op = "Error"
-                if self.wp_db_available: # Use date-specific tickets_sold for non-real-booking
-                    _ts_op = self.wp_db.get_tickets_sold_for_date(product_id, slot_label_after_op, date_str_after_op)
-                    if isinstance(_ts_op, int):
-                        tickets_sold_val_after_op = _ts_op
-                
-                response_old_total_capacity = "Error"
-                response_new_total_capacity = "Error"
-                if isinstance(tickets_sold_val_after_op, int):
-                    response_old_total_capacity = old_stock_int + tickets_sold_val_after_op
-                    response_new_total_capacity = current_available_stock_after_op + tickets_sold_val_after_op
 
-                return {
-                    'product_id': product_id, 'product_name': final_product_data_after_op.get('name'),
-                    'slot_id': slot_id, 'slot_label': slot_label_after_op,
-                    'date_id': date_id, 'date': date_str_after_op,
-                    'old_capacity': response_old_total_capacity,
-                    'new_capacity': response_new_total_capacity,
-                    'quantity_sold': tickets_sold_val_after_op,
-                    'available': current_available_stock_after_op,
-                    'old_stock_available': old_stock_int,
-                    'new_stock_available': current_available_stock_after_op
-                }
+            if "Unknown Date" in date_str_for_response or not date_str_for_response:
+                 logging.warning(f"[PID:{product_id}] date_str_for_response is still unknown or placeholder for slot '{slot_label_for_response}' before DB call (increment). Current value: '{date_str_for_response}'")
+
+            tickets_sold_val = "Error"
+            if slot_label_for_response != "Unknown Slot" and date_str_for_response and "Unknown Date" not in date_str_for_response and self.wp_db_available:
+                logging.debug(f"[PID:{product_id}] Querying DB for sold tickets (increment). Product: {product_id}, Slot Label: '{slot_label_for_response}', Date: '{date_str_for_response}'")
+                _ts = self.wp_db.get_tickets_sold_for_date(product_id, slot_label_for_response, date_str_for_response)
+                if isinstance(_ts, int):
+                    tickets_sold_val = _ts
+                else:
+                    logging.error(f"[PID:{product_id}] DB query for sold tickets (increment) returned non-integer: {_ts}")
+            else:
+                logging.warning(f"[PID:{product_id}] Cannot query DB for sold tickets (increment). Slot Label: '{slot_label_for_response}', Date: '{date_str_for_response}', DB Available: {self.wp_db_available}")
+
+            calculated_old_total_capacity = "Error"
+            calculated_new_total_capacity = "Error"
+            if isinstance(tickets_sold_val, int):
+                calculated_old_total_capacity = old_stock_int + tickets_sold_val
+                calculated_new_total_capacity = new_stock_int + tickets_sold_val
+            
+            response_data = {
+                'product_id': product_id,
+                'product_name': final_product_data.get('name', product_data.get('name')), 
+                'slot_id': slot_id,
+                'slot_label': slot_label_for_response,
+                'date_id': date_id,
+                'date': date_str_for_response,
+                'old_capacity': calculated_old_total_capacity, 
+                'new_capacity': calculated_new_total_capacity, 
+                'quantity_sold': tickets_sold_val,
+                'available': new_stock_int, 
+                'old_stock_available': old_stock_int, 
+                'new_stock_available': new_stock_int
+            }
+            logging.debug(f"[PID:{product_id}] Increment API Response: {response_data}")
+            return response_data
                 
+        except WooCommerceAPIError as e: 
+            logging.error(f"[PID:{product_id}] WooCommerceAPIError during increment: {e}", exc_info=True)
+            raise 
         except Exception as e:
+            logging.error(f"[PID:{product_id}] Generic Exception during increment: {e}", exc_info=True)
             raise WooCommerceAPIError(f"Failed to increment inventory for product {product_id}: {str(e)}")
 
     async def decrement_woocommerce_inventory(self, product_id: int, slot_id: str = None, date_id: str = None) -> Dict[str, Any]:
@@ -1101,167 +1114,186 @@ class WooCommerceClient:
         Decrement WooCommerce inventory by 1 for a specific product/slot/date.
         """
         try:
+            logging.debug(f"[PID:{product_id}] Attempting to decrement inventory for slot '{slot_id}', date '{date_id}'.")
             product_data = await self.get_product_data(product_id)
             booking_data = self.extract_fooevents_data(product_data)
-            
+
             if not booking_data:
+                logging.error(f"[PID:{product_id}] No FooEvents data found after extract_fooevents_data.")
                 raise WooCommerceAPIError(f"No FooEvents data found for product {product_id}")
 
             if not slot_id or not date_id:
-                if f"event_{product_id}" in booking_data and f"date_{product_id}" in date_id:
-                    pass
-                else:
+                is_synthetic = f"event_{product_id}" in booking_data and f"date_{product_id}" == date_id
+                if not is_synthetic:
+                    logging.error(f"[PID:{product_id}] Missing slot_id ('{slot_id}') or date_id ('{date_id}') for non-synthetic event.")
                     raise WooCommerceAPIError(f"Both slot_id and date_id are required for inventory management of multi-slot/date events")
 
             if slot_id not in booking_data:
+                logging.error(f"[PID:{product_id}] Slot '{slot_id}' not found in booking_data. Available slots: {list(booking_data.keys())}")
                 raise WooCommerceAPIError(f"Slot {slot_id} not found in product {product_id}")
             
             slot_data = booking_data[slot_id]
             is_real_bookings_product = self._is_real_bookings_product(product_data)
-            
+            logging.debug(f"[PID:{product_id}] Is real bookings product: {is_real_bookings_product}")
+
+            old_stock_int = 0
+            new_stock_int = 0
+            stock_source_field_type = None 
+            date_str_for_response = "Unknown Date (dec_initial)" 
+            slot_label_for_response = slot_data.get('label', "Unknown Slot")
+            meta_data = product_data.get('meta_data', []) 
+
             if is_real_bookings_product:
-                add_date = slot_data.get('add_date', {})
-                is_nested_structure = isinstance(add_date, dict) and add_date
+                logging.debug(f"[PID:{product_id}] Handling as REAL BOOKINGS product for decrement.")
+                flat_override_stock_key = f"{date_id}_stock"
+                flat_override_date_key = f"{date_id}_add_date"
                 
-                if is_nested_structure:
-                    if date_id not in add_date:
-                        raise WooCommerceAPIError(f"Date {date_id} not found in slot {slot_id} for product {product_id}")
-                    date_info = add_date[date_id]
-                    old_stock = date_info.get('stock', '0')
-                    try: old_stock_int = int(old_stock) if old_stock != '' else 0
-                    except (ValueError, TypeError): old_stock_int = 0
-                    if old_stock_int <= 0: raise WooCommerceAPIError(f"Cannot decrement inventory below 0 (current: {old_stock_int})")
-                    new_stock_int = old_stock_int - 1
-                    date_info['stock'] = str(new_stock_int)
-                    await self._update_product_booking_data(product_id, booking_data)
+                current_stock_str = slot_data.get(flat_override_stock_key)
 
-                    # Re-fetch data for accurate response
-                    final_product_data_after_dec = await self.get_product_data(product_id)
-                    final_booking_data_after_dec = self.extract_fooevents_data(final_product_data_after_dec)
-                    final_slot_data_after_dec = final_booking_data_after_dec.get(slot_id, {})
-                    final_date_info_after_dec = final_slot_data_after_dec.get('add_date', {}).get(date_id, {})
-
-                    current_available_stock_after_dec = new_stock_int
-                    date_str_after_dec = final_date_info_after_dec.get('date', date_info.get('date', 'Unknown Date'))
-                    slot_label_after_dec = final_slot_data_after_dec.get('label', slot_data.get('label'))
-
-                    tickets_sold_val_after_dec = "Error"
-                    if slot_label_after_dec and date_str_after_dec != 'Unknown Date' and self.wp_db_available:
-                        _ts_after = self.wp_db.get_tickets_sold_for_date(product_id, slot_label_after_dec, date_str_after_dec)
-                        if isinstance(_ts_after, int):
-                            tickets_sold_val_after_dec = _ts_after
-                            
-                    old_total_capacity_after_dec = "Error"
-                    new_total_capacity_calculated_after_dec = "Error"
-                    if isinstance(tickets_sold_val_after_dec, int):
-                        old_total_capacity_after_dec = old_stock_int + tickets_sold_val_after_dec
-                        new_total_capacity_calculated_after_dec = current_available_stock_after_dec + tickets_sold_val_after_dec
-
-                    return {
-                        'product_id': product_id, 'product_name': final_product_data_after_dec.get('name'),
-                        'slot_id': slot_id, 'slot_label': slot_label_after_dec,
-                        'date_id': date_id, 'date': date_str_after_dec,
-                        'old_capacity': old_total_capacity_after_dec,
-                        'new_capacity': new_total_capacity_calculated_after_dec,
-                        'quantity_sold': tickets_sold_val_after_dec,
-                        'available': current_available_stock_after_dec,
-                        'old_stock_available': old_stock_int,
-                        'new_stock_available': current_available_stock_after_dec
-                    }
-                else: # Flat structure for real bookings
-                    stock_key = f'{date_id}_stock'
-                    date_key = f'{date_id}_add_date'
-                    if stock_key not in slot_data:
-                        raise WooCommerceAPIError(f"Stock field {stock_key} not found in slot {slot_id} for product {product_id}")
-                    old_stock = slot_data[stock_key]
-                    try: old_stock_int = int(old_stock) if old_stock != '' else 0
-                    except (ValueError, TypeError): old_stock_int = 0
-                    if old_stock_int <= 0: raise WooCommerceAPIError(f"Cannot decrement inventory below 0 (current: {old_stock_int})")
-                    new_stock_int = old_stock_int - 1
-                    slot_data[stock_key] = str(new_stock_int)
-                    await self._update_product_booking_data(product_id, booking_data)
-
-                    # Re-fetch data for accurate response
-                    final_product_data_after_op = await self.get_product_data(product_id)
-                    final_booking_data_after_op = self.extract_fooevents_data(final_product_data_after_op)
-                    final_slot_data_after_op = final_booking_data_after_op.get(slot_id, {}) if final_booking_data_after_op else {}
-
-                    current_available_stock_after_op = new_stock_int
-                    date_str_after_op = final_slot_data_after_op.get(f'{date_id}_add_date', slot_data.get(date_key, 'Unknown Date'))
-                    slot_label_after_op = final_slot_data_after_op.get('label', slot_data.get('label'))
-
-                    tickets_sold_val_after_op = "Error"
-                    if slot_label_after_op and date_str_after_op != 'Unknown Date' and self.wp_db_available:
-                        _ts_after = self.wp_db.get_tickets_sold_for_date(product_id, slot_label_after_op, date_str_after_op)
-                        if isinstance(_ts_after, int):
-                            tickets_sold_val_after_op = _ts_after
-                            
-                    response_old_total_capacity = "Error"
-                    response_new_total_capacity = "Error"
-                    if isinstance(tickets_sold_val_after_op, int):
-                        response_old_total_capacity = old_stock_int + tickets_sold_val_after_op
-                        response_new_total_capacity = current_available_stock_after_op + tickets_sold_val_after_op
-
-                    return {
-                        'product_id': product_id, 'product_name': final_product_data_after_op.get('name'),
-                        'slot_id': slot_id, 'slot_label': slot_label_after_op,
-                        'date_id': date_id, 'date': date_str_after_op,
-                        'old_capacity': response_old_total_capacity,
-                        'new_capacity': response_new_total_capacity,
-                        'quantity_sold': tickets_sold_val_after_op,
-                        'available': current_available_stock_after_op,
-                        'old_stock_available': old_stock_int,
-                        'new_stock_available': current_available_stock_after_op
-                    }
-            else: # Normal FooEvents product
-                old_stock_quantity = product_data.get('stock_quantity')
-                if old_stock_quantity is None:
-                    old_stock_quantity = slot_data.get(f"{date_id}_stock", '0')
-
-                try: old_stock_int = int(old_stock_quantity) if old_stock_quantity is not None and old_stock_quantity != '' else 0
-                except (ValueError, TypeError): old_stock_int = 0
-                if old_stock_int <= 0: raise WooCommerceAPIError(f"Cannot decrement inventory below 0 (current: {old_stock_int})")
+                if current_stock_str is not None and current_stock_str != '':
+                    stock_source_field_type = 'flat_override'
+                    date_str_for_response = slot_data.get(flat_override_date_key) # Try flat first
+                    if not date_str_for_response: # Fallback to nested for date string
+                        nested_add_date_data = slot_data.get('add_date', {})
+                        if isinstance(nested_add_date_data, dict) and date_id in nested_add_date_data and isinstance(nested_add_date_data[date_id], dict):
+                            date_str_for_response = nested_add_date_data[date_id].get('date')
+                    if not date_str_for_response: date_str_for_response = "Unknown Date (flat_stock_no_date_dec_initial)"
+                    logging.debug(f"[PID:{product_id}] Using FLAT OVERRIDE stock field '{flat_override_stock_key}' ('{current_stock_str}'). Date for response: '{date_str_for_response}'.")
+                else:
+                    logging.debug(f"[PID:{product_id}] Flat override stock field '{flat_override_stock_key}' not found/empty. Checking nested for decrement.")
+                    add_date_data = slot_data.get('add_date', {})
+                    if isinstance(add_date_data, dict) and date_id in add_date_data and isinstance(add_date_data[date_id], dict):
+                        date_info_nested = add_date_data[date_id]
+                        current_stock_str = date_info_nested.get('stock', '0')
+                        stock_source_field_type = 'nested'
+                        date_str_for_response = date_info_nested.get('date', "Unknown Date (nested_dec_initial)")
+                        logging.debug(f"[PID:{product_id}] Using NESTED stock field from add_date['{date_id}']['stock'] ('{current_stock_str}'). Date: '{date_str_for_response}'.")
+                    else:
+                        logging.error(f"[PID:{product_id}] Could not find stock for real booking (decrement). Slot: {slot_id}, Date: {date_id}.")
+                        raise WooCommerceAPIError(f"Could not determine stock field for real booking (decrement): Prod {product_id}, Slot {slot_id}, Date {date_id}")
+                
+                try:
+                    old_stock_int = int(current_stock_str) if current_stock_str is not None and current_stock_str != '' else 0
+                except (ValueError, TypeError) as e:
+                    logging.warning(f"[PID:{product_id}] Invalid stock string '{current_stock_str}' for real booking (decrement), defaulting to 0. Error: {e}")
+                    old_stock_int = 0
+                
+                if old_stock_int <= 0:
+                    logging.error(f"[PID:{product_id}] Cannot decrement inventory below 0 (current: {old_stock_int}) for real booking.")
+                    raise WooCommerceAPIError(f"Cannot decrement inventory below 0 (current: {old_stock_int})")
+                
                 new_stock_int = old_stock_int - 1
+
+                if stock_source_field_type == 'flat_override':
+                    slot_data[flat_override_stock_key] = str(new_stock_int)
+                elif stock_source_field_type == 'nested':
+                    slot_data['add_date'][date_id]['stock'] = str(new_stock_int)
                 
-                if product_data.get('manage_stock', False) and product_data.get('stock_quantity') is not None: # WC Stock managed
+                await self._update_product_booking_data(product_id, booking_data)
+
+            else: # Normal FooEvents product (synthetic or WC stock managed)
+                logging.debug(f"[PID:{product_id}] Handling as NORMAL/SYNTHETIC product for decrement.")
+                if product_data.get('manage_stock') and product_data.get('stock_quantity') is not None:
+                    stock_source_field_type = 'wc_stock'
+                    current_stock_str = str(product_data.get('stock_quantity', '0'))
+                    _event_meta_fields_dec = {m.get('key'): m.get('value') for m in meta_data if m.get('key', '').startswith('WooCommerceEvents')}
+                    date_str_for_response = _event_meta_fields_dec.get('WooCommerceEventsDate', slot_data.get(f"date_{product_id}_add_date", "Unknown Date (wc_stock_dec_initial)"))
+                    logging.debug(f"[PID:{product_id}] Using WC STOCK quantity '{current_stock_str}'. Date for response: '{date_str_for_response}'.")
+                else:
+                    stock_source_field_type = 'synthetic_meta'
+                    current_stock_str = slot_data.get(f"{date_id}_stock", '0') 
+                    date_str_for_response = slot_data.get(f"{date_id}_add_date", "Unknown Date (synthetic_meta_dec_initial)")
+                    logging.debug(f"[PID:{product_id}] Using SYNTHETIC META stock '{current_stock_str}' from slot_data['{date_id}_stock']. Date: '{date_str_for_response}'.")
+
+                try:
+                    old_stock_int = int(current_stock_str) if current_stock_str is not None and current_stock_str != '' else 0
+                except (ValueError, TypeError) as e:
+                    logging.warning(f"[PID:{product_id}] Invalid stock string '{current_stock_str}' for normal/synthetic (decrement), defaulting to 0. Error: {e}")
+                    old_stock_int = 0
+                
+                if old_stock_int <= 0:
+                    logging.error(f"[PID:{product_id}] Cannot decrement inventory below 0 (current: {old_stock_int}) for normal/synthetic.")
+                    raise WooCommerceAPIError(f"Cannot decrement inventory below 0 (current: {old_stock_int})")
+                
+                new_stock_int = old_stock_int - 1
+
+                if stock_source_field_type == 'wc_stock':
                     await self._update_product_stock_quantity(product_id, new_stock_int)
-                else: # Update synthetic booking data
+                elif stock_source_field_type == 'synthetic_meta':
                     slot_data[f"{date_id}_stock"] = str(new_stock_int)
                     await self._update_product_booking_data(product_id, booking_data)
+            
+            logging.info(f"[PID:{product_id}] Decremented stock. Type: {stock_source_field_type}, Old avail: {old_stock_int}, New avail: {new_stock_int}.")
 
-                # Re-fetch for accurate response data
-                final_product_data_after_norm_dec = await self.get_product_data(product_id)
-                final_booking_data_after_norm_dec = self.extract_fooevents_data(final_product_data_after_norm_dec)
-                final_slot_data_after_norm_dec = final_booking_data_after_norm_dec.get(slot_id, {}) if final_booking_data_after_norm_dec else {}
+            final_product_data = await self.get_product_data(product_id)
+            final_booking_data = self.extract_fooevents_data(final_product_data)
+            final_slot_data = final_booking_data.get(slot_id, {}) if final_booking_data else {}
+            final_meta_data_dec = final_product_data.get('meta_data', [])
 
-                current_available_stock_after_norm_dec = new_stock_int
-                date_str_after_norm_dec = final_slot_data_after_norm_dec.get(f"{date_id}_add_date", slot_data.get(f"{date_id}_add_date", 'Unknown Date'))
-                slot_label_after_norm_dec = final_slot_data_after_norm_dec.get('label', slot_data.get('label'))
+            # Refined date_str_for_response derivation from final state
+            temp_date_str = "Unknown Date (final_dec_fallback)"
+            if stock_source_field_type == 'flat_override':
+                temp_date_str = final_slot_data.get(f"{date_id}_add_date")
+                if not temp_date_str:
+                    final_nested_add_date = final_slot_data.get('add_date', {})
+                    if isinstance(final_nested_add_date, dict) and date_id in final_nested_add_date and isinstance(final_nested_add_date[date_id], dict):
+                        temp_date_str = final_nested_add_date[date_id].get('date')
+            elif stock_source_field_type == 'nested':
+                final_add_date = final_slot_data.get('add_date', {})
+                final_date_info = final_add_date.get(date_id, {})
+                temp_date_str = final_date_info.get('date')
+            elif stock_source_field_type == 'wc_stock':
+                 _event_meta_fields_final_dec = {m.get('key'): m.get('value') for m in final_meta_data_dec if m.get('key', '').startswith('WooCommerceEvents')}
+                 temp_date_str = _event_meta_fields_final_dec.get('WooCommerceEventsDate')
+                 if not temp_date_str:
+                     temp_date_str = final_slot_data.get(f"date_{product_id}_add_date")
+            elif stock_source_field_type == 'synthetic_meta':
+                temp_date_str = final_slot_data.get(f"{date_id}_add_date")
 
-                total_tickets_sold_val_after_norm_dec = "Error"
-                if self.wp_db_available: # Use date-specific tickets_sold for non-real-booking
-                    _ts_norm = self.wp_db.get_tickets_sold_for_date(product_id, slot_label_after_norm_dec, date_str_after_norm_dec)
-                    if isinstance(_ts_norm, int):
-                        total_tickets_sold_val_after_norm_dec = _ts_norm
-                
-                old_total_capacity_after_norm_dec = "Error"
-                new_total_capacity_calculated_after_norm_dec = "Error"
-                if isinstance(total_tickets_sold_val_after_norm_dec, int):
-                    old_total_capacity_after_norm_dec = old_stock_int + total_tickets_sold_val_after_norm_dec
-                    new_total_capacity_calculated_after_norm_dec = current_available_stock_after_norm_dec + total_tickets_sold_val_after_norm_dec
+            date_str_for_response = temp_date_str if temp_date_str else "Unknown Date (final_dec_unresolved)"
+            
+            if "Unknown Date" in date_str_for_response or not date_str_for_response:
+                 logging.warning(f"[PID:{product_id}] date_str_for_response is still unknown or placeholder for slot '{slot_label_for_response}' before DB call (decrement). Current value: '{date_str_for_response}'")
 
-                return {
-                    'product_id': product_id, 'product_name': final_product_data_after_norm_dec.get('name'),
-                    'slot_id': slot_id, 'slot_label': slot_label_after_norm_dec,
-                    'date_id': date_id, 'date': date_str_after_norm_dec,
-                    'old_capacity': old_total_capacity_after_norm_dec,
-                    'new_capacity': new_total_capacity_calculated_after_norm_dec,
-                    'quantity_sold': total_tickets_sold_val_after_norm_dec,
-                    'available': current_available_stock_after_norm_dec,
-                    'old_stock_available': old_stock_int,
-                    'new_stock_available': current_available_stock_after_norm_dec
-                }
+            tickets_sold_val = "Error"
+            if slot_label_for_response != "Unknown Slot" and date_str_for_response and "Unknown Date" not in date_str_for_response and self.wp_db_available:
+                logging.debug(f"[PID:{product_id}] Querying DB for sold tickets (decrement). Product: {product_id}, Slot Label: '{slot_label_for_response}', Date: '{date_str_for_response}'")
+                _ts = self.wp_db.get_tickets_sold_for_date(product_id, slot_label_for_response, date_str_for_response)
+                if isinstance(_ts, int):
+                    tickets_sold_val = _ts
+                else:
+                    logging.error(f"[PID:{product_id}] DB query for sold tickets (decrement) returned non-integer: {_ts}")
+            else:
+                logging.warning(f"[PID:{product_id}] Cannot query DB for sold tickets (decrement). Slot Label: '{slot_label_for_response}', Date: '{date_str_for_response}', DB Available: {self.wp_db_available}")
+
+            calculated_old_total_capacity = "Error"
+            calculated_new_total_capacity = "Error"
+            if isinstance(tickets_sold_val, int):
+                calculated_old_total_capacity = old_stock_int + tickets_sold_val
+                calculated_new_total_capacity = new_stock_int + tickets_sold_val
+
+            response_data = {
+                'product_id': product_id,
+                'product_name': final_product_data.get('name', product_data.get('name')),
+                'slot_id': slot_id,
+                'slot_label': slot_label_for_response,
+                'date_id': date_id,
+                'date': date_str_for_response,
+                'old_capacity': calculated_old_total_capacity,
+                'new_capacity': calculated_new_total_capacity,
+                'quantity_sold': tickets_sold_val,
+                'available': new_stock_int,
+                'old_stock_available': old_stock_int,
+                'new_stock_available': new_stock_int
+            }
+            logging.debug(f"[PID:{product_id}] Decrement API Response: {response_data}")
+            return response_data
+
+        except WooCommerceAPIError as e: # Catch specific API errors first
+            logging.error(f"[PID:{product_id}] WooCommerceAPIError during decrement: {e}", exc_info=True)
+            raise # Re-raise to be caught by FastAPI handler
         except Exception as e:
+            logging.error(f"[PID:{product_id}] Generic Exception during decrement: {e}", exc_info=True)
             raise WooCommerceAPIError(f"Failed to decrement inventory for product {product_id}: {str(e)}")
 
     async def _update_product_booking_data(self, product_id: int, booking_data: Dict[str, Any]) -> None:
@@ -1347,101 +1379,166 @@ class WooCommerceClient:
 
     async def set_woocommerce_inventory(self, product_id: int, slot_id: str = None, date_id: str = None, new_stock: int = 0) -> Dict[str, Any]:
         try:
+            logging.debug(f"[PID:{product_id}] Attempting to SET inventory for slot '{slot_id}', date '{date_id}' to new_stock_available: {new_stock}.")
             product_data = await self.get_product_data(product_id)
-            booking_data = self.extract_fooevents_data(product_data)
-            if not booking_data: raise WooCommerceAPIError(f"No FooEvents data found for product {product_id}")
+            booking_data = self.extract_fooevents_data(product_data) # This needs to be robust
+            meta_data = product_data.get('meta_data', []) # Get meta_data for date string resolution
+
+            if not booking_data:
+                logging.error(f"[PID:{product_id}] No FooEvents data found after extract_fooevents_data (set inventory).")
+                raise WooCommerceAPIError(f"No FooEvents data found for product {product_id}")
+
             if not slot_id or not date_id:
-                if f"event_{product_id}" in booking_data and f"date_{product_id}" in date_id: pass
-                else: raise WooCommerceAPIError(f"Both slot_id and date_id are required for inventory management")
-            if slot_id not in booking_data: raise WooCommerceAPIError(f"Slot {slot_id} not found in product {product_id}")
+                is_synthetic = f"event_{product_id}" in booking_data and f"date_{product_id}" == date_id
+                if not is_synthetic:
+                    logging.error(f"[PID:{product_id}] Missing slot_id ('{slot_id}') or date_id ('{date_id}') for non-synthetic event (set inventory).")
+                    raise WooCommerceAPIError(f"Both slot_id and date_id are required for inventory management")
+            
+            if slot_id not in booking_data:
+                logging.error(f"[PID:{product_id}] Slot '{slot_id}' not found in booking_data (set inventory). Available slots: {list(booking_data.keys())}")
+                raise WooCommerceAPIError(f"Slot {slot_id} not found in product {product_id}")
             
             slot_data = booking_data[slot_id]
             is_real_bookings_product = self._is_real_bookings_product(product_data)
-            
-            old_stock_int = 0
-            if is_real_bookings_product:
-                add_date = slot_data.get('add_date', {})
-                is_nested_structure = isinstance(add_date, dict) and add_date
-                if is_nested_structure:
-                    if date_id not in add_date: raise WooCommerceAPIError(f"Date {date_id} not found in slot {slot_id}")
-                    date_info = add_date[date_id]
-                    old_stock = date_info.get('stock', '0')
-                    try: old_stock_int = int(old_stock) if old_stock != '' else 0
-                    except: old_stock_int = 0
-                    date_info['stock'] = str(new_stock)
-                else: # Flat structure
-                    stock_key = f'{date_id}_stock'
-                    if stock_key not in slot_data: raise WooCommerceAPIError(f"Stock field {stock_key} not found")
-                    old_stock = slot_data[stock_key]
-                    try: old_stock_int = int(old_stock) if old_stock != '' else 0
-                    except: old_stock_int = 0
-                    slot_data[stock_key] = str(new_stock)
-                await self._update_product_booking_data(product_id, booking_data)
-            else: # Normal FooEvents (synthetic or WC stock)
-                old_stock_quantity = product_data.get('stock_quantity')
-                if old_stock_quantity is None: # Not WC stock managed, use synthetic stock
-                     old_stock_quantity = slot_data.get(f"{date_id}_stock", '0')
-                try: old_stock_int = int(old_stock_quantity) if old_stock_quantity is not None and old_stock_quantity != '' else 0
-                except: old_stock_int = 0
+            logging.debug(f"[PID:{product_id}] Is real bookings product (set inventory): {is_real_bookings_product}")
 
-                if product_data.get('manage_stock', False) and product_data.get('stock_quantity') is not None:
+            old_stock_int = 0
+            # new_stock is the target available stock
+            stock_source_field_type = None
+            date_str_for_response = "Unknown Date (set_initial)" # Initial value
+            slot_label_for_response = slot_data.get('label', "Unknown Slot")
+
+
+            if is_real_bookings_product:
+                logging.debug(f"[PID:{product_id}] Handling as REAL BOOKINGS product for set inventory.")
+                flat_override_stock_key = f"{date_id}_stock"
+                flat_override_date_key = f"{date_id}_add_date"
+                
+                current_stock_str = slot_data.get(flat_override_stock_key)
+
+                if current_stock_str is not None and current_stock_str != '': # Check if flat override exists
+                    stock_source_field_type = 'flat_override'
+                    date_str_for_response = slot_data.get(flat_override_date_key, "Unknown Date (flat_override_set_initial)")
+                    logging.debug(f"[PID:{product_id}] Using FLAT OVERRIDE stock field '{flat_override_stock_key}' with value '{current_stock_str}'. Date field '{flat_override_date_key}' value: '{date_str_for_response}'.")
+                else:
+                    logging.debug(f"[PID:{product_id}] Flat override stock field '{flat_override_stock_key}' not found or empty. Checking nested for set inventory.")
+                    add_date_data = slot_data.get('add_date', {})
+                    if isinstance(add_date_data, dict) and date_id in add_date_data and isinstance(add_date_data[date_id], dict):
+                        date_info_nested = add_date_data[date_id]
+                        current_stock_str = date_info_nested.get('stock', '0')
+                        stock_source_field_type = 'nested'
+                        date_str_for_response = date_info_nested.get('date', "Unknown Date (nested_set_initial)")
+                        logging.debug(f"[PID:{product_id}] Using NESTED stock field from add_date['{date_id}']['stock'] with value '{current_stock_str}'. Date: '{date_str_for_response}'.")
+                    else:
+                        logging.error(f"[PID:{product_id}] Could not find stock for real booking (set). Slot: {slot_id}, Date: {date_id}. Flat override key: '{flat_override_stock_key}', Nested check failed for add_date['{date_id}'].")
+                        raise WooCommerceAPIError(f"Could not determine stock field for real booking (set): Prod {product_id}, Slot {slot_id}, Date {date_id}")
+                
+                try:
+                    old_stock_int = int(current_stock_str) if current_stock_str is not None and current_stock_str != '' else 0
+                except (ValueError, TypeError) as e:
+                    logging.warning(f"[PID:{product_id}] Invalid stock string '{current_stock_str}' for real booking (set), defaulting to 0. Error: {e}")
+                    old_stock_int = 0
+                
+                # For 'set', new_stock is the target available stock.
+                if stock_source_field_type == 'flat_override':
+                    slot_data[flat_override_stock_key] = str(new_stock)
+                elif stock_source_field_type == 'nested':
+                    slot_data['add_date'][date_id]['stock'] = str(new_stock)
+                
+                await self._update_product_booking_data(product_id, booking_data)
+
+            else: # Normal FooEvents product (synthetic or WC stock managed)
+                logging.debug(f"[PID:{product_id}] Handling as NORMAL/SYNTHETIC product for set inventory.")
+                if product_data.get('manage_stock') and product_data.get('stock_quantity') is not None:
+                    stock_source_field_type = 'wc_stock'
+                    current_stock_str = str(product_data.get('stock_quantity', '0'))
+                    # For synthetic/WC stock, the date_id is like "date_PRODUCTID"
+                    # The actual display date comes from WooCommerceEventsDate meta if available
+                    _event_meta_fields_set = {m.get('key'): m.get('value') for m in meta_data if m.get('key', '').startswith('WooCommerceEvents')}
+                    date_str_for_response = _event_meta_fields_set.get('WooCommerceEventsDate', slot_data.get(f"date_{product_id}_add_date", "Unknown Date (wc_stock_set_initial)"))
+                    logging.debug(f"[PID:{product_id}] Using WC STOCK quantity '{current_stock_str}'. Date for response: '{date_str_for_response}'.")
+                else:
+                    stock_source_field_type = 'synthetic_meta'
+                    current_stock_str = slot_data.get(f"{date_id}_stock", '0') # date_id is synthetic
+                    date_str_for_response = slot_data.get(f"{date_id}_add_date", "Unknown Date (synthetic_meta_set_initial)")
+                    logging.debug(f"[PID:{product_id}] Using SYNTHETIC META stock '{current_stock_str}' from slot_data['{date_id}_stock']. Date: '{date_str_for_response}'.")
+
+                try:
+                    old_stock_int = int(current_stock_str) if current_stock_str is not None and current_stock_str != '' else 0
+                except: old_stock_int = 0
+                
+                # For 'set', new_stock is the target available stock.
+                if stock_source_field_type == 'wc_stock':
                     await self._update_product_stock_quantity(product_id, new_stock)
-                else: # Update synthetic booking data
+                elif stock_source_field_type == 'synthetic_meta':
                     slot_data[f"{date_id}_stock"] = str(new_stock)
                     await self._update_product_booking_data(product_id, booking_data)
+            
+            logging.info(f"[PID:{product_id}] Set stock. Type: {stock_source_field_type}, Old avail: {old_stock_int}, Target new avail: {new_stock}.")
 
-            # Common return structure preparation
-            final_product_data = await self.get_product_data(product_id) # Re-fetch to confirm changes
-            final_booking_data = self.extract_fooevents_data(final_product_data)
-            final_slot_data = final_booking_data.get(slot_id, {})
-            final_date_info = {}
-            final_date_str = "Unknown Date"
+            # Re-fetch product data to ensure the response reflects the true state after update.
+            final_product_data = await self.get_product_data(product_id)
+            final_booking_data = self.extract_fooevents_data(final_product_data) # Re-extract with potentially updated product_data
+            final_slot_data = final_booking_data.get(slot_id, {}) if final_booking_data else {}
+            final_meta_data = final_product_data.get('meta_data', []) # Get final meta_data
 
-            if is_real_bookings_product: # This was determined based on initial product_data, not final_product_data
-                _add_date = final_slot_data.get('add_date', {})
-                if isinstance(_add_date, dict) and date_id in _add_date: # Nested
-                    final_date_info = _add_date[date_id]
-                    final_date_str = final_date_info.get('date', 'Unknown Date')
-                elif f"{date_id}_add_date" in final_slot_data: # Flat
-                    final_date_str = final_slot_data.get(f"{date_id}_add_date", 'Unknown Date')
-                    final_date_info = {'stock': final_slot_data.get(f"{date_id}_stock", '0')}
-            else: # Synthetic
-                final_date_str = final_slot_data.get(f"{date_id}_add_date", 'Unknown Date')
-                final_date_info = {'stock': final_slot_data.get(f"{date_id}_stock", '0')}
+            # Re-derive date_str_for_response from the final state to be sure
+            # This ensures that if extract_fooevents_data now provides a better date string, we use it.
+            if stock_source_field_type == 'flat_override':
+                date_str_for_response = final_slot_data.get(f"{date_id}_add_date", date_str_for_response)
+            elif stock_source_field_type == 'nested':
+                final_add_date = final_slot_data.get('add_date', {})
+                final_date_info_nested = final_add_date.get(date_id, {})
+                date_str_for_response = final_date_info_nested.get('date', date_str_for_response)
+            elif stock_source_field_type == 'wc_stock':
+                 _event_meta_fields_final = {m.get('key'): m.get('value') for m in final_meta_data if m.get('key', '').startswith('WooCommerceEvents')}
+                 date_str_for_response = _event_meta_fields_final.get('WooCommerceEventsDate', final_slot_data.get(f"date_{product_id}_add_date", date_str_for_response))
+            elif stock_source_field_type == 'synthetic_meta':
+                # For synthetic, date_id is like "date_PRODUCTID"
+                date_str_for_response = final_slot_data.get(f"{date_id}_add_date", date_str_for_response)
 
-            current_available_stock = 0
-            try: current_available_stock = int(final_date_info.get('stock', '0'))
-            except: pass
 
-            tickets_sold_val = 0
-            total_capacity_val = "Error" # Default to error string
-            if self.wp_db_available:
-                _slot_label_for_db = final_slot_data.get('label', slot_data.get('label'))
-                # _get_accurate_capacity_data returns (stock_from_booking_options, tickets_sold_from_db)
-                # stock_from_booking_options is current_available_stock here.
-                _, _ts = self._get_accurate_capacity_data(product_id, _slot_label_for_db, final_date_str, current_available_stock)
-                
+            if date_str_for_response == "Unknown Date" or not date_str_for_response:
+                 logging.warning(f"[PID:{product_id}] date_str_for_response is still unknown for slot '{slot_label_for_response}' before DB call (set). This may lead to incorrect sold count.")
+
+            tickets_sold_val = "Error"
+            if slot_label_for_response != "Unknown Slot" and date_str_for_response != "Unknown Date (set_initial)" and date_str_for_response and self.wp_db_available:
+                logging.debug(f"[PID:{product_id}] Querying DB for sold tickets (set). Product: {product_id}, Slot Label: '{slot_label_for_response}', Date: '{date_str_for_response}'")
+                _ts = self.wp_db.get_tickets_sold_for_date(product_id, slot_label_for_response, date_str_for_response)
                 if isinstance(_ts, int):
                     tickets_sold_val = _ts
-                    total_capacity_val = current_available_stock + tickets_sold_val
-                else: # _ts is "DB Error"
-                    tickets_sold_val = "DB Error" # Ensure tickets_sold_val reflects this
-                    total_capacity_val = "Error Calculating Capacity" # Explicit error string
-            else: # DB not available
-                tickets_sold_val = "DB Unavailable"
-                total_capacity_val = "Error Calculating Capacity"
+                else:
+                    logging.error(f"[PID:{product_id}] DB query for sold tickets (set) returned non-integer: {_ts}")
+            else:
+                logging.warning(f"[PID:{product_id}] Cannot query DB for sold tickets (set). Slot Label: '{slot_label_for_response}', Date: '{date_str_for_response}', DB Available: {self.wp_db_available}")
 
-            return {
-                'product_id': product_id, 'product_name': final_product_data.get('name'),
-                'slot_id': slot_id, 'slot_label': final_slot_data.get('label'),
-                'date_id': date_id, 'date': final_date_str,
-                'old_capacity': old_stock_int + tickets_sold_val, # Calculate old total capacity
-                'new_capacity': total_capacity_val, # This is the new total capacity
+            calculated_old_total_capacity = "Error"
+            calculated_new_total_capacity = "Error"
+            current_available_stock_after_set = new_stock # This was the target
+            if isinstance(tickets_sold_val, int):
+                calculated_old_total_capacity = old_stock_int + tickets_sold_val
+                calculated_new_total_capacity = current_available_stock_after_set + tickets_sold_val
+            
+            response_data = {
+                'product_id': product_id,
+                'product_name': final_product_data.get('name', product_data.get('name')),
+                'slot_id': slot_id,
+                'slot_label': slot_label_for_response,
+                'date_id': date_id,
+                'date': date_str_for_response,
+                'old_capacity': calculated_old_total_capacity,
+                'new_capacity': calculated_new_total_capacity,
                 'quantity_sold': tickets_sold_val,
-                'available': current_available_stock, # This is the new available stock
-                # Compatibility fields / internal details
+                'available': current_available_stock_after_set,
                 'old_stock_available': old_stock_int,
-                'new_stock_available': new_stock # This was the target available stock
+                'new_stock_available': current_available_stock_after_set
             }
+            logging.debug(f"[PID:{product_id}] Set API Response: {response_data}")
+            return response_data
+
+        except WooCommerceAPIError as e: # Catch specific API errors first
+            logging.error(f"[PID:{product_id}] WooCommerceAPIError during set inventory: {e}", exc_info=True)
+            raise # Re-raise to be caught by FastAPI handler
         except Exception as e:
+            logging.error(f"[PID:{product_id}] Generic Exception during set inventory: {e}", exc_info=True)
             raise WooCommerceAPIError(f"Failed to set inventory for product {product_id}: {str(e)}")

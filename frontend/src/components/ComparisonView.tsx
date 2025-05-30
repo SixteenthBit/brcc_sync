@@ -210,6 +210,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
 
       try {
         if (event.type === 'eventbrite') {
+          const existingDetail = eventDetails[key] || {};
           if (event.details?.occurrence_id) {
             try {
               const ticketClassesResponse = await api.getTicketClasses(event.details.occurrence_id);
@@ -227,13 +228,34 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
                   url: event.details.url,
                   status: 'loaded',
                   capacityLoading: false,
-                  lastUpdate: new Date().toISOString()
+                  lastUpdate: new Date().toISOString(),
+                  error: undefined // Clear previous error on success
                 };
               } else {
-                newDetails[key] = { ...newDetails[key], occurrence: event.details, startDate: event.details.start_date, url: event.details.url, status: 'loaded', error: 'No ticket classes found' };
+                newDetails[key] = {
+                                    ...existingDetail, // Preserve old numeric data
+                                    ...newDetails[key], // Apply new non-numeric data like name, id, type
+                                    occurrence: event.details,
+                                    startDate: event.details.start_date,
+                                    url: event.details.url,
+                                    status: 'error', // Set status to error
+                                    error: 'No ticket classes found',
+                                    capacityLoading: false,
+                                    lastUpdate: new Date().toISOString()
+                                };
               }
             } catch (capacityErr) {
-              newDetails[key] = { ...newDetails[key], occurrence: event.details, startDate: event.details.start_date, url: event.details.url, status: 'loaded', error: 'Capacity data unavailable' };
+              newDetails[key] = {
+                                ...existingDetail, // Preserve old numeric data
+                                ...newDetails[key],
+                                occurrence: event.details,
+                                startDate: event.details.start_date,
+                                url: event.details.url,
+                                status: 'error', // Set status to error
+                                error: capacityErr instanceof ApiError ? capacityErr.message : 'Capacity data unavailable',
+                                capacityLoading: false,
+                                lastUpdate: new Date().toISOString()
+                            };
             }
           } else {
             newDetails[key] = { ...newDetails[key], status: 'error', error: 'Missing occurrence details' };
@@ -258,27 +280,42 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
               startDate: dateFromMasterList.date,
               status: 'loaded',
               inventoryLoading: false,
-              lastUpdate: new Date().toISOString()
+              lastUpdate: new Date().toISOString(),
+              error: undefined // Clear previous error
             };
           } else {
-            if (event.details && event.details.productName) {
+            const existingDetail = eventDetails[key] || {};
+            if (event.details && event.details.productName) { // If some details were passed initially (e.g. from mapping)
                 newDetails[key] = {
+                    ...existingDetail, // Preserve old numeric data
                     ...newDetails[key],
-                    capacity: event.details.capacity,
-                    sold: event.details.sold,
-                    available: event.details.available,
-                    price: event.details.price,
-                    startDate: event.details.date,
-                    status: 'loaded',
-                    error: !productFromMasterList ? 'Product not in master list' : !slotFromMasterList ? 'Slot not in master list' : 'Date not in master list'
+                    // Update with what we have, but mark as error if master list lookup failed
+                    capacity: existingDetail.capacity !== undefined ? existingDetail.capacity : event.details.capacity,
+                    sold: existingDetail.sold !== undefined ? existingDetail.sold : event.details.sold,
+                    available: existingDetail.available !== undefined ? existingDetail.available : event.details.available,
+                    price: existingDetail.price !== undefined ? existingDetail.price : event.details.price,
+                    startDate: existingDetail.startDate !== undefined ? existingDetail.startDate : event.details.date,
+                    status: 'error', // Set status to error
+                    error: !productFromMasterList ? 'Product not in master list' : !slotFromMasterList ? 'Slot not in master list' : 'Date not in master list',
+                    inventoryLoading: false,
+                    lastUpdate: new Date().toISOString()
                 };
-            } else {
-                newDetails[key] = { ...newDetails[key], status: 'error', error: 'WooCommerce event data not found in master list' };
+            } else { // No initial details and not found in master list
+                newDetails[key] = { ...newDetails[key], status: 'error', error: 'WooCommerce event data not found in master list', inventoryLoading: false, lastUpdate: new Date().toISOString() };
             }
           }
         }
       } catch (err) {
-        newDetails[key] = { ...newDetails[key], status: 'error', error: err instanceof ApiError ? err.message : 'Failed to load event details' };
+        const existingDetail = eventDetails[key] || {};
+        newDetails[key] = {
+                            ...existingDetail, // Preserve old numeric data
+                            ...newDetails[key], // Apply new non-numeric data
+                            status: 'error',
+                            error: err instanceof ApiError ? err.message : 'Failed to load event details',
+                            capacityLoading: false, // Ensure loading flags are reset
+                            inventoryLoading: false,
+                            lastUpdate: new Date().toISOString()
+                        };
       }
     }
     setEventDetails(newDetails);
